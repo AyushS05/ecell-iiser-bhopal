@@ -1,7 +1,9 @@
 "use client";
 // components/ui/Navbar.tsx
 // ─────────────────────────────────────────────────────────────────────────────
-// Sticky, blur-backdrop navigation bar with scroll-aware opacity transition.
+// Editorial Brutalism Navbar.
+// Stark ruled border. No glass blur. Bebas Neue wordmark + DM Mono nav links.
+// Single amber CTA. Minimal, structured, institutional.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useState, useEffect } from "react";
@@ -9,7 +11,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ArrowUpRight } from "lucide-react";
 import { siteConfig } from "@/config/site";
 
 export default function Navbar() {
@@ -19,92 +21,116 @@ export default function Navbar() {
   const router = useRouter();
 
   useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 20);
+    const handler = () => setScrolled(window.scrollY > 40);
     window.addEventListener("scroll", handler, { passive: true });
     return () => window.removeEventListener("scroll", handler);
   }, []);
 
-  // Handle direct visits with hashes (e.g. refreshing the page while on /#pitch)
   useEffect(() => {
     if (pathname === "/" && window.location.hash) {
       const targetId = window.location.hash.substring(1);
       setTimeout(() => {
-        const elem = document.getElementById(targetId);
-        if (elem) {
-          elem.scrollIntoView({ behavior: "smooth" });
-        }
-      }, 300); 
+        document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth" });
+      }, 300);
     }
   }, [pathname]);
 
-  // Custom handler to override Next.js default hash jumps
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (href.startsWith("/#")) {
-      e.preventDefault(); // Stop Next.js from jumping instantly
+      e.preventDefault();
       const targetId = href.substring(2);
-      
       if (pathname === "/") {
-        // We are already on the home page, just smooth scroll
         const elem = document.getElementById(targetId);
         if (elem) {
           elem.scrollIntoView({ behavior: "smooth" });
           window.history.pushState(null, "", href);
         }
       } else {
-        // We are on another page (like /team). Route to "/" first.
         router.push("/");
-        
-        // Wait 300ms for the heavy homepage layout/animations to render and settle, then scroll
         setTimeout(() => {
-          const elem = document.getElementById(targetId);
-          if (elem) {
-            elem.scrollIntoView({ behavior: "smooth" });
-            window.history.pushState(null, "", href);
-          }
-        }, 300); 
+          document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth" });
+          window.history.pushState(null, "", href);
+        }, 300);
       }
     }
-    setMobileOpen(false); // Always close mobile menu on click
+    setMobileOpen(false);
   };
 
   return (
     <>
       <motion.header
-        initial={{ y: -20, opacity: 0 }}
+        initial={{ y: -8, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-        className={[
-          "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
-          scrolled
-            ? "bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/[0.06] shadow-[0_0_40px_rgba(0,0,0,0.4)]"
-            : "bg-transparent",
-        ].join(" ")}
+        transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 50,
+          borderBottom: "1px solid",
+          borderColor: scrolled ? "rgba(255,255,255,0.09)" : "transparent",
+          background: scrolled ? "rgba(12, 11, 9, 0.92)" : "transparent",
+          backdropFilter: scrolled ? "blur(8px)" : "none",
+          transition: "background 0.4s ease, border-color 0.4s ease, backdrop-filter 0.4s ease",
+        }}
       >
-        <nav className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <Image 
-              src="/logo.png" 
-              alt="E-Cell Logo" 
-              width={32} 
-              height={32} 
+        <nav className="max-w-7xl mx-auto px-6 md:px-12 h-14 flex items-center justify-between">
+
+          {/* Wordmark */}
+          <Link href="/" className="flex items-center gap-3 group">
+            <Image
+              src="/logo.png"
+              alt="E-Cell Logo"
+              width={28}
+              height={28}
               className="object-contain"
-              style={{ width: "auto", height: "auto" }}
+              style={{ width: "auto", height: "auto", opacity: 0.85 }}
             />
-            <span className="text-white font-bold text-sm tracking-tight hidden sm:block">
-              E-Cell{" "}
-              <span className="text-white/30 font-normal font-mono text-xs">IISER Bhopal</span>
-            </span>
+            <div className="flex items-baseline gap-2">
+              <span
+                style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: "1.35rem",
+                  letterSpacing: "0.06em",
+                  color: "#f0ede6",
+                  lineHeight: 1,
+                }}
+              >
+                E-CELL
+              </span>
+              <span
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "0.58rem",
+                  letterSpacing: "0.12em",
+                  color: "rgba(240,237,230,0.28)",
+                  textTransform: "uppercase",
+                }}
+                className="hidden sm:block"
+              >
+                IISER Bhopal
+              </span>
+            </div>
           </Link>
 
-          {/* Desktop nav */}
-          <ul className="hidden md:flex items-center gap-1">
-            {siteConfig.nav.map((link) => (
+          {/* Desktop nav links */}
+          <ul className="hidden md:flex items-center gap-0">
+            {siteConfig.nav.map((link, i) => (
               <li key={link.href}>
                 <Link
-                  href={link.href as any}
+                  href={link.href as string}
                   onClick={(e) => handleNavClick(e, link.href)}
-                  className="px-4 py-2 rounded-lg text-sm text-white/50 hover:text-white hover:bg-white/[0.05] transition-all duration-200 font-mono"
+                  className="block px-4 py-1.5 transition-colors duration-200 hover-amber"
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: "0.65rem",
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    color: "rgba(240,237,230,0.38)",
+                  }}
+                  onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "rgba(240,237,230,0.8)")}
+                  onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "rgba(240,237,230,0.38)")}
                 >
                   {link.label}
                 </Link>
@@ -113,25 +139,48 @@ export default function Navbar() {
           </ul>
 
           {/* Desktop CTA */}
-          <div className="hidden md:flex items-center gap-3">
-            <Link href="/#pitch" onClick={(e) => handleNavClick(e, "/#pitch")} aria-label="Pitch your idea from desktop navigation">
+          <div className="hidden md:flex items-center">
+            <Link
+              href="/#pitch"
+              onClick={(e) => handleNavClick(e, "/#pitch")}
+              aria-label="Pitch your idea"
+            >
               <motion.button
-                whileHover={{ scale: 1.03, boxShadow: "0 0 20px rgba(34,211,238,0.2)" }}
-                whileTap={{ scale: 0.97 }}
-                className="px-4 py-2 rounded-xl bg-cyan-400/10 border border-cyan-400/30 text-cyan-300 text-sm font-semibold hover:bg-cyan-400/20 transition-all duration-200"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="group inline-flex items-center gap-2 px-4 py-2 transition-all duration-200"
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "0.62rem",
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  background: "var(--color-amber)",
+                  color: "#0c0b09",
+                  fontWeight: 500,
+                }}
               >
                 Pitch Your Idea
+                <ArrowUpRight
+                  size={11}
+                  className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                />
               </motion.button>
             </Link>
           </div>
 
-          {/* Mobile menu button */}
+          {/* Mobile menu toggle */}
           <button
-            className="md:hidden p-2 rounded-lg border border-white/10 text-white/50 hover:text-white hover:bg-white/[0.05] transition-all"
+            className="md:hidden flex items-center justify-center w-8 h-8 transition-colors duration-200"
+            style={{
+              border: "1px solid rgba(255,255,255,0.12)",
+              color: "rgba(240,237,230,0.5)",
+            }}
             onClick={() => setMobileOpen((v) => !v)}
             aria-label="Toggle mobile menu"
+            onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(232,160,32,0.5)")}
+            onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.12)")}
           >
-            {mobileOpen ? <X size={16} /> : <Menu size={16} />}
+            {mobileOpen ? <X size={14} /> : <Menu size={14} />}
           </button>
         </nav>
       </motion.header>
@@ -140,25 +189,62 @@ export default function Navbar() {
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.25 }}
-            className="fixed top-16 left-0 right-0 z-40 bg-[#0a0a0a]/95 backdrop-blur-xl border-b border-white/[0.06] p-4 flex flex-col gap-2"
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              position: "fixed",
+              top: 56,
+              left: 0,
+              right: 0,
+              zIndex: 40,
+              background: "rgba(12,11,9,0.97)",
+              borderBottom: "1px solid rgba(255,255,255,0.08)",
+              padding: "1rem 1.5rem",
+            }}
           >
-            {siteConfig.nav.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href as any}
-                onClick={(e) => handleNavClick(e, link.href)}
-                className="px-4 py-3 rounded-xl text-sm text-white/60 hover:text-white hover:bg-white/[0.05] transition-all font-mono"
+            <ul className="flex flex-col gap-0">
+              {siteConfig.nav.map((link) => (
+                <li key={link.href} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                  <Link
+                    href={link.href as string}
+                    onClick={(e) => handleNavClick(e, link.href)}
+                    className="block py-3.5 transition-colors duration-150"
+                    style={{
+                      fontFamily: "var(--font-mono)",
+                      fontSize: "0.7rem",
+                      letterSpacing: "0.14em",
+                      textTransform: "uppercase",
+                      color: "rgba(240,237,230,0.4)",
+                    }}
+                    onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "rgba(240,237,230,0.85)")}
+                    onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "rgba(240,237,230,0.4)")}
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/#pitch"
+              onClick={(e) => handleNavClick(e, "/#pitch")}
+              aria-label="Submit your pitch"
+            >
+              <button
+                className="w-full mt-5 py-3.5 flex items-center justify-center gap-2 transition-colors duration-200"
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "0.7rem",
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  background: "var(--color-amber)",
+                  color: "#0c0b09",
+                  fontWeight: 500,
+                }}
               >
-                {link.label}
-              </Link>
-            ))}
-            <Link href="/#pitch" onClick={(e) => handleNavClick(e, "/#pitch")} aria-label="Submit your pitch from mobile menu"> 
-              <button className="w-full mt-2 px-4 py-3 rounded-xl bg-cyan-400/10 border border-cyan-400/30 text-cyan-300 text-sm font-semibold">
-                Submit Your Pitch
+                PITCH YOUR IDEA
+                <ArrowUpRight size={12} />
               </button>
             </Link>
           </motion.div>

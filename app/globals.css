@@ -1,20 +1,28 @@
 /* app/globals.css */
 /* ─────────────────────────────────────────────────────────────────────────── */
-/* Tailwind base, custom properties, and global overrides.                    */
+/* Editorial Brutalism — E-Cell IISER Bhopal                                  */
+/* Fonts loaded via <link> in layout.tsx, NOT here (Tailwind v4 / Turbopack  */
+/* requires @import "tailwindcss" to be the very first statement).            */
 /* ─────────────────────────────────────────────────────────────────────────── */
 
 @import "tailwindcss";
 
 /* ── CSS Custom Properties ───────────────────────────────────────────────── */
 :root {
-  --color-bg: #0a0a0a;
-  --color-surface: #0d0d0f;
-  --color-border: rgba(255, 255, 255, 0.07);
-  --color-cyan: #22d3ee;
-  --color-violet: #8b5cf6;
-  --color-green: #34d399;
-  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), "Fira Code", monospace;
+  --color-bg: #0c0b09;
+  --color-surface: #111008;
+  --color-surface-2: #161410;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.18);
+
+  /* Single accent — amber/gold */
+  --color-amber: #E8A020;
+  --color-amber-dim: rgba(232, 160, 32, 0.12);
+  --color-amber-mid: rgba(232, 160, 32, 0.35);
+
+  --font-display: 'Bebas Neue', 'Impact', sans-serif;
+  --font-mono: 'DM Mono', 'Fira Code', monospace;
+  --font-serif: 'DM Serif Display', Georgia, serif;
 }
 
 /* ── Global Resets ───────────────────────────────────────────────────────── */
@@ -33,99 +41,100 @@ html {
 
 body {
   background-color: var(--color-bg);
-  color: #ffffff;
+  color: #f0ede6;
   margin: 0;
+  font-family: var(--font-mono);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
 }
 
-:focus:not(:focus-visible) {
-  outline: none;
-}
-
+:focus:not(:focus-visible) { outline: none; }
 :focus-visible {
-  outline: 2px solid var(--color-cyan);
+  outline: 1px solid var(--color-amber);
   outline-offset: 3px;
-  border-radius: 4px;
+  border-radius: 2px;
 }
 
 /* ── Scrollbar ───────────────────────────────────────────────────────────── */
-::-webkit-scrollbar {
-  width: 6px;
-  background: transparent;
-}
+::-webkit-scrollbar { width: 4px; background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 999px;
-}
+/* ── Typography ──────────────────────────────────────────────────────────── */
+.font-display { font-family: var(--font-display); }
+.font-mono    { font-family: var(--font-mono); }
+.font-serif   { font-family: var(--font-serif); }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.14);
-}
-
-/* ── Typography Scale ────────────────────────────────────────────────────── */
 h1, h2, h3, h4, h5, h6 {
-  letter-spacing: -0.02em;
-  line-height: 1.1;
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+  line-height: 1.0;
+  color: #f0ede6;
 }
 
-/* ── Glass Morphism & Tailwind Utilities ─────────────────────────────────── */
+/* ── Utilities ───────────────────────────────────────────────────────────── */
 @layer utilities {
-  .glass {
-    backdrop-filter: blur(24px);
-    background-color: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+  .rule-top    { border-top:    1px solid var(--color-border); }
+  .rule-bottom { border-bottom: 1px solid var(--color-border); }
+  .rule-x      { border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
+  .rule-top-strong    { border-top:    1px solid var(--color-border-strong); }
+  .rule-bottom-strong { border-bottom: 1px solid var(--color-border-strong); }
+
+  .text-amber        { color: var(--color-amber); }
+  .bg-amber-dim      { background-color: var(--color-amber-dim); }
+  .border-amber      { border-color: var(--color-amber-mid); }
+  .text-chalk        { color: #f0ede6; }
+  .text-muted        { color: rgba(240, 237, 230, 0.45); }
+  .text-muted-strong { color: rgba(240, 237, 230, 0.65); }
+  .glow-amber        { box-shadow: 0 0 40px rgba(232, 160, 32, 0.12); }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.2rem 0.65rem;
+    border: 1px solid var(--color-border);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(240, 237, 230, 0.5);
   }
 
-  .glass-heavy {
-    backdrop-filter: blur(40px);
-    background-color: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.10);
+  .hover-amber { position: relative; }
+  .hover-amber::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: var(--color-amber);
+    transition: width 0.3s ease;
   }
-  
-  .glow-cyan {
-    box-shadow: 0 0 32px rgba(34, 211, 238, 0.15);
-  }
-
-  .glow-violet {
-    box-shadow: 0 0 32px rgba(139, 92, 246, 0.15);
-  }
-
-  .text-gradient-cyan-violet {
-    background-image: linear-gradient(to right, #22d3ee, #67e8f9, #a78bfa);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-
-  .animate-glow-pulse {
-    animation: glow-pulse 3s ease-in-out infinite;
-  }
+  .hover-amber:hover::after { width: 100%; }
 }
 
-/* ── Form Reset Helpers ──────────────────────────────────────────────────── */
+/* ── Form autofill ───────────────────────────────────────────────────────── */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 textarea:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0 1000px #0d0d0f inset;
-  -webkit-text-fill-color: #ffffff;
-  caret-color: #ffffff;
+  -webkit-box-shadow: 0 0 0 1000px var(--color-surface) inset;
+  -webkit-text-fill-color: #f0ede6;
+  caret-color: #f0ede6;
   transition: background-color 5000s ease-in-out 0s;
 }
 
-/* ── Added Animations ───────────────────────────────────────────── */
+/* ── Animations ──────────────────────────────────────────────────────────── */
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(24px); }
+  from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes glow-pulse {
-  0%, 100% {
-    box-shadow: 0 0 16px rgba(34, 211, 238, 0.2);
-  }
-  50% {
-    box-shadow: 0 0 32px rgba(34, 211, 238, 0.4);
-  }
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes ticker {
@@ -140,4 +149,9 @@ textarea:-webkit-autofill {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+@keyframes amber-pulse {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
 }

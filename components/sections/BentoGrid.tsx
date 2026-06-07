@@ -1,259 +1,260 @@
 "use client";
 // components/sections/BentoGrid.tsx
 // ─────────────────────────────────────────────────────────────────────────────
-// Glassmorphic Bento-box grid showcasing E-Cell's four founding pillars.
-// Cards use staggered scroll-triggered animations via Framer Motion.
+// Editorial Brutalism — E-Cell Pillars section.
+// Cards are magazine-style tiles: large index number, ruled border, sparse text.
+// No glass. No gradient blobs. No rainbow icon colors.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { motion, useReducedMotion } from "framer-motion";
-import {
-  Rocket,
-  Zap,
-  Users,
-  Globe,
-  TrendingUp,
-  Clock,
-  LucideIcon,
-} from "lucide-react";
+import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 import { siteConfig } from "@/config/site";
 
-// ── Icon Map ──────────────────────────────────────────────────────────────────
+// ── Status badge variants ─────────────────────────────────────────────────────
+// We map the comingSoon string to a display label and style.
+// Everything uses a single amber accent or pure white — no per-card color.
+function StatusBadge({ text }: { text: string }) {
+  const isLive = /live|active|open/i.test(text);
+  return (
+    <span
+      className="inline-flex items-center gap-2"
+      style={{
+        fontFamily: "var(--font-mono)",
+        fontSize: "0.6rem",
+        letterSpacing: "0.14em",
+        textTransform: "uppercase",
+        color: isLive ? "var(--color-amber)" : "rgba(240,237,230,0.28)",
+      }}
+    >
+      <span
+        className="w-1.5 h-1.5 rounded-full"
+        style={{
+          background: isLive ? "var(--color-amber)" : "rgba(240,237,230,0.2)",
+          animation: isLive ? "amber-pulse 1.8s ease-in-out infinite" : undefined,
+        }}
+      />
+      {text}
+    </span>
+  );
+}
 
-const ICON_MAP: Record<string, LucideIcon> = {
-  Rocket,
-  Zap,
-  Users,
-  Globe,
-  TrendingUp,
-};
-
-// ── Accent Color Map ──────────────────────────────────────────────────────────
-
-type AccentKey = "cyan" | "violet" | "green" | "amber" | "rose";
-
-const ACCENT_STYLES: Record<
-  AccentKey,
-  {
-    iconBg: string;
-    iconColor: string;
-    border: string;
-    glow: string;
-    badge: string;
-    badgeText: string;
-  }
-> = {
-  cyan: {
-    iconBg: "bg-cyan-400/10",
-    iconColor: "text-cyan-400",
-    border: "hover:border-cyan-400/20",
-    glow: "group-hover:shadow-[0_0_60px_rgba(34,211,238,0.06)]",
-    badge: "bg-cyan-400/10 border-cyan-400/20",
-    badgeText: "text-cyan-300",
-  },
-  violet: {
-    iconBg: "bg-violet-400/10",
-    iconColor: "text-violet-400",
-    border: "hover:border-violet-400/20",
-    glow: "group-hover:shadow-[0_0_60px_rgba(139,92,246,0.06)]",
-    badge: "bg-violet-400/10 border-violet-400/20",
-    badgeText: "text-violet-300",
-  },
-  green: {
-    iconBg: "bg-emerald-400/10",
-    iconColor: "text-emerald-400",
-    border: "hover:border-emerald-400/20",
-    glow: "group-hover:shadow-[0_0_60px_rgba(52,211,153,0.06)]",
-    badge: "bg-emerald-400/10 border-emerald-400/20",
-    badgeText: "text-emerald-300",
-  },
-  amber: {
-    iconBg: "bg-amber-400/10",
-    iconColor: "text-amber-400",
-    border: "hover:border-amber-400/20",
-    glow: "group-hover:shadow-[0_0_60px_rgba(251,191,36,0.06)]",
-    badge: "bg-amber-400/10 border-amber-400/20",
-    badgeText: "text-amber-300",
-  },
-  rose: {
-    iconBg: "bg-rose-400/10",
-    iconColor: "text-rose-400",
-    border: "hover:border-rose-400/20",
-    glow: "group-hover:shadow-[0_0_60px_rgba(251,113,133,0.06)]",
-    badge: "bg-rose-400/10 border-rose-400/20",
-    badgeText: "text-rose-300",
-  },
-};
-
-// ── BentoCard ─────────────────────────────────────────────────────────────────
-
-interface BentoCardProps {
+// ── Editorial Pillar Card ─────────────────────────────────────────────────────
+interface PillarCardProps {
   id: string;
-  icon: string;
+  icon: string;       // kept in props but we won't use it — replaced by large index number
   title: string;
   description: string;
-  accent: string;
+  accent: string;     // kept for API compatibility
   size: string;
   comingSoon: string;
   index: number;
 }
 
-function BentoCard({
-  icon,
-  title,
-  description,
-  accent,
-  comingSoon,
-  size,
-  index,
-}: BentoCardProps) {
+function PillarCard({ title, description, comingSoon, size, index }: PillarCardProps) {
   const shouldReduce = useReducedMotion();
-  const Icon = ICON_MAP[icon] ?? Rocket;
-  const styles = ACCENT_STYLES[accent as AccentKey] ?? ACCENT_STYLES.cyan;
-
   const isLarge = size === "large";
+  const displayIndex = String(index + 1).padStart(2, "0");
 
   return (
     <motion.div
-      initial={shouldReduce ? {} : { opacity: 0, y: 40, filter: "blur(4px)" }}
-      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.6, delay: index * 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className={[
-        isLarge ? "md:col-span-2" : "",
-        size === "medium" ? "md:col-span-1" : "",
-      ].join(" ")}
+      initial={shouldReduce ? {} : { opacity: 0, y: 32 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.55, delay: index * 0.06, ease: [0.25, 0.46, 0.45, 0.94] }}
+      className={isLarge ? "md:col-span-2" : ""}
     >
       <div
-        className={[
-          "group relative h-full rounded-2xl border border-white/[0.07] bg-white/[0.02] backdrop-blur-md p-6 md:p-8",
-          "transition-all duration-500 cursor-default overflow-hidden",
-          styles.border,
-          styles.glow,
-          "hover:bg-white/[0.04]",
-        ].join(" ")}
+        className="group relative h-full flex flex-col justify-between p-7 md:p-8 transition-all duration-400 cursor-default"
+        style={{
+          border: "1px solid rgba(255,255,255,0.07)",
+          background: "rgba(255,255,255,0.015)",
+          minHeight: isLarge ? "260px" : "220px",
+        }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(232, 160, 32, 0.25)";
+          (e.currentTarget as HTMLDivElement).style.background = "rgba(232, 160, 32, 0.03)";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.07)";
+          (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.015)";
+        }}
       >
-        {/* Corner gradient accent */}
-        <div
-          className="absolute top-0 right-0 w-40 h-40 rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
-          style={{
-            background: `radial-gradient(circle at top right, ${
-              accent === "cyan" ? "rgba(34,211,238,0.06)" :
-              accent === "violet" ? "rgba(139,92,246,0.06)" :
-              accent === "green" ? "rgba(52,211,153,0.06)" :
-              accent === "amber" ? "rgba(251,191,36,0.06)" :
-              "rgba(251,113,133,0.06)"
-            } 0%, transparent 70%)`,
-          }}
-        />
-
-        {/* Subtle top border glow on hover */}
-        <div className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-white/0 to-transparent group-hover:via-white/20 transition-all duration-500 pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col h-full gap-5">
-          {/* Icon */}
-          <div
-            className={[
-              "w-12 h-12 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110",
-              styles.iconBg,
-              styles.iconColor,
-            ].join(" ")}
+        {/* Top row: index + status */}
+        <div className="flex items-start justify-between mb-6">
+          <span
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "3.5rem",
+              lineHeight: 1,
+              color: "rgba(232, 160, 32, 0.18)",
+              letterSpacing: "0.02em",
+              transition: "color 0.3s ease",
+            }}
+            className="group-hover:!text-[rgba(232,160,32,0.35)]"
           >
-            <Icon size={22} className={styles.iconColor} />
-          </div>
+            {displayIndex}
+          </span>
+          <StatusBadge text={comingSoon} />
+        </div>
 
-          {/* Content */}
-          <div className="flex-1">
-            <h3 className="text-lg font-bold text-white tracking-tight mb-3">{title}</h3>
-            <p className="text-sm text-white/50 leading-relaxed">{description}</p>
-          </div>
-
-          {/* Coming soon badge */}
-          <div className="flex items-center gap-2 pt-2">
-            <span
-              className={[
-                "inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-mono",
-                styles.badge,
-                styles.badgeText,
-              ].join(" ")}
-            >
-              <Clock size={10} />
-              {comingSoon}
-            </span>
-          </div>
+        {/* Title */}
+        <div className="flex-1 flex flex-col justify-end">
+          <div
+            className="w-8 h-px mb-5 transition-all duration-300 group-hover:w-14"
+            style={{ background: "var(--color-amber)", opacity: 0.5 }}
+          />
+          <h3
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: isLarge ? "1.9rem" : "1.5rem",
+              lineHeight: 1.05,
+              letterSpacing: "0.02em",
+              color: "rgba(240,237,230,0.85)",
+            }}
+            className="mb-3 uppercase"
+          >
+            {title}
+          </h3>
+          <p
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: "0.78rem",
+              lineHeight: 1.65,
+              color: "rgba(240,237,230,0.35)",
+            }}
+          >
+            {description}
+          </p>
         </div>
       </div>
     </motion.div>
   );
 }
 
-// ── Main Component ────────────────────────────────────────────────────────────
+// ── Pillars config shape ───────────────────────────────────────────────────────
+interface PillarsConfig {
+  sectionLabel: string;
+  headline: string;
+  description: string;
+  items: PillarCardProps[];
+}
 
+// ── Main Component ─────────────────────────────────────────────────────────────
 export default function BentoGrid() {
-  // ✅ SEO FIX: Extracted the new 'description' property
-  const { sectionLabel, headline, description, items } = siteConfig.pillars;
+  const pillars = siteConfig.pillars as unknown as PillarsConfig;
+  const { sectionLabel, headline, description, items } = pillars;
 
   return (
-    <section id="vision" className="relative py-32 px-4">
-      {/* Background orbs */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/4 right-0 w-[500px] h-[500px] bg-cyan-500/[0.04] rounded-full blur-[80px]" />
-        <div className="absolute bottom-1/4 left-0 w-[400px] h-[400px] bg-violet-500/[0.04] rounded-full blur-[80px]" />
-      </div>
+    <section id="vision" className="relative py-28 px-0">
+      <div className="max-w-7xl mx-auto px-6 md:px-12">
 
-      <div className="relative z-10 max-w-6xl mx-auto">
-        {/* Section Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="mb-16 max-w-3xl" // ✅ Increased max-width slightly for the new text
-        >
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/[0.03] text-white/40 text-xs font-mono tracking-widest uppercase mb-6">
-            <span className="w-1.5 h-1.5 rounded-full bg-white/30" />
-            {sectionLabel}
-          </span>
-          <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight leading-tight mb-6">
-            {headline}
-          </h2>
-          {/* ✅ SEO FIX: Injected the high-word-count, keyword-rich description here */}
-          <p className="text-lg text-white/50 leading-relaxed font-light">
-            {description}
-          </p>
-        </motion.div>
-
-        {/* Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-fr">
-          {items.map((item, i) => (
-            <BentoCard key={item.id} {...item} index={i} />
-          ))}
-        </div>
-
-        {/* Bottom CTA strip */}
+        {/* ── Section Header ── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="mt-12 flex flex-col sm:flex-row items-center justify-between gap-6 px-8 py-6 rounded-2xl border border-white/[0.07] bg-white/[0.02]"
+          transition={{ duration: 0.6 }}
+          className="mb-16 border-b border-white/[0.07] pb-10"
         >
-          <div>
-            <p className="text-sm font-bold text-white mb-1">Want to shape what we build?</p>
-            <p className="text-xs text-white/40 font-mono">
-              Members get a seat at the table — and early access to every program.
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+            {/* Left: label + headline */}
+            <div className="flex-1 max-w-2xl">
+              <span
+                style={{ fontFamily: "var(--font-mono)", fontSize: "0.6rem", letterSpacing: "0.18em" }}
+                className="inline-flex items-center gap-3 text-white/30 uppercase mb-5"
+              >
+                <span className="w-5 h-px" style={{ background: "var(--color-amber)", opacity: 0.7 }} />
+                {sectionLabel}
+              </span>
+
+              <h2
+                style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: "clamp(3rem, 7vw, 5.5rem)",
+                  lineHeight: 0.95,
+                  letterSpacing: "0.01em",
+                  color: "rgba(240,237,230,0.9)",
+                }}
+                className="uppercase"
+              >
+                {headline}
+              </h2>
+            </div>
+
+            {/* Right: description */}
+            <p
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: "0.78rem",
+                lineHeight: 1.7,
+                color: "rgba(240,237,230,0.35)",
+                maxWidth: "340px",
+              }}
+              className="md:text-right"
+            >
+              {description}
             </p>
           </div>
-          <a href="#pitch">
-            <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              className="shrink-0 inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-cyan-400/30 bg-cyan-400/10 text-cyan-300 text-sm font-semibold hover:bg-cyan-400/20 transition-all duration-200"
-            >
-              Join as a Member
-              <Rocket size={14} />
-            </motion.button>
-          </a>
         </motion.div>
+
+        {/* ── Pillar Grid ── */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-[1px] bg-white/[0.07]">
+          {items.map((item, i) => (
+            <PillarCard key={item.id} {...item} index={i} />
+          ))}
+        </div>
+
+        {/* ── Bottom CTA Strip ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.55, delay: 0.3 }}
+          className="mt-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 px-8 py-7"
+          style={{ border: "1px solid rgba(255,255,255,0.07)", borderTop: "none" }}
+        >
+          <div>
+            <p
+              style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem", letterSpacing: "0.04em" }}
+              className="text-white/75 uppercase mb-1"
+            >
+              Want to shape what we build?
+            </p>
+            <p
+              style={{ fontFamily: "var(--font-mono)", fontSize: "0.7rem", letterSpacing: "0.08em" }}
+              className="text-white/30 uppercase"
+            >
+              Members get early access to every program.
+            </p>
+          </div>
+          <Link href="#pitch">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              className="group shrink-0 inline-flex items-center gap-2.5 px-6 py-3 transition-all duration-200"
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: "0.72rem",
+                letterSpacing: "0.1em",
+                border: "1px solid var(--color-amber)",
+                color: "var(--color-amber)",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = "var(--color-amber)";
+                (e.currentTarget as HTMLButtonElement).style.color = "#0c0b09";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+                (e.currentTarget as HTMLButtonElement).style.color = "var(--color-amber)";
+              }}
+            >
+              JOIN AS A MEMBER
+              <ArrowUpRight size={13} />
+            </motion.button>
+          </Link>
+        </motion.div>
+
       </div>
     </section>
   );

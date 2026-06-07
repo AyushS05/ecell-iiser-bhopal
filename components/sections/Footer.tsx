@@ -1,81 +1,126 @@
 "use client";
 // components/sections/Footer.tsx
 // ─────────────────────────────────────────────────────────────────────────────
-// Minimalist footer with social links and institutional information.
+// Editorial Brutalism Footer.
+// Ruled borders, DM Mono, single amber accent. No glass, no gradients.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { Mail, MapPin, ExternalLink } from "lucide-react"; 
+import { Mail, MapPin, ExternalLink, ArrowUpRight } from "lucide-react";
 import { FaLinkedin, FaInstagram, FaXTwitter, FaGithub } from "react-icons/fa6";
 import { siteConfig } from "@/config/site";
 
-const SOCIAL_ICONS: Record<string, React.ComponentType<any>> = {
-  Linkedin: FaLinkedin,
+const SOCIAL_ICONS: Record<string, React.ComponentType<{ size?: number }>> = {
+  Linkedin:  FaLinkedin,
   Instagram: FaInstagram,
-  Twitter: FaXTwitter,
-  Github: FaGithub,
+  Twitter:   FaXTwitter,
+  Github:    FaGithub,
 };
 
 export default function Footer() {
-  const { footer, name, shortName } = siteConfig;
+  const { footer, name, shortName } = siteConfig as any;
 
   const handleEmailClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
       navigator.userAgent
     );
-    
     if (isMobile) {
-      // Opens the OS default email app (Apple Mail, Gmail app, etc.)
       window.location.href = `mailto:${footer.email}`;
     } else {
       const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${footer.email}`;
-      
-      // Try opening in a new tab
       const newTab = window.open(gmailUrl, "_blank", "noopener,noreferrer");
-      
-      // If the browser's pop-up blocker stops the new tab, fallback to the same tab
-      if (!newTab || newTab.closed || typeof newTab.closed === 'undefined') {
+      if (!newTab || newTab.closed || typeof newTab.closed === "undefined") {
         window.location.href = gmailUrl;
       }
     }
   };
 
   return (
-    <footer id="contact" className="relative border-t border-white/[0.06]">
-      <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+    <footer
+      id="contact"
+      className="relative"
+      style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
+    >
+      {/* Top amber rule accent */}
+      <div
+        className="absolute top-0 left-0 right-0 h-px"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent 0%, rgba(232,160,32,0.4) 40%, rgba(232,160,32,0.4) 60%, transparent 100%)",
+        }}
+      />
 
-      <div className="max-w-6xl mx-auto px-4 py-20">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+      <div className="max-w-7xl mx-auto px-6 md:px-12">
+
+        {/* ── Upper block: brand + columns ── */}
+        <div
+          className="grid grid-cols-1 md:grid-cols-12 gap-0"
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
+        >
           {/* Brand column */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="col-span-1 md:col-span-1"
+            className="md:col-span-4 py-14"
+            style={{ borderRight: "1px solid rgba(255,255,255,0.07)", paddingRight: "3rem" }}
           >
-            <div className="flex items-center gap-3 mb-4">
-              <Image 
-                src="/logo.png" 
-                alt="E-Cell Logo" 
-                width={36} 
-                height={36} 
-                className="object-contain" 
-                style={{ width: "auto", height: "auto" }} 
+            {/* Wordmark */}
+            <div className="flex items-center gap-3 mb-6">
+              <Image
+                src="/logo.png"
+                alt="E-Cell Logo"
+                width={32}
+                height={32}
+                className="object-contain"
+                style={{ width: "auto", height: "auto", opacity: 0.8 }}
               />
               <div>
-                <div className="text-white font-bold text-sm tracking-tight">{shortName}</div>
-                <div className="text-white/30 text-xs font-mono">IISER Bhopal</div>
+                <div
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    fontSize: "1.3rem",
+                    letterSpacing: "0.06em",
+                    color: "#f0ede6",
+                    lineHeight: 1,
+                  }}
+                >
+                  E-CELL
+                </div>
+                <div
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: "0.58rem",
+                    letterSpacing: "0.12em",
+                    color: "rgba(240,237,230,0.28)",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  IISER Bhopal
+                </div>
               </div>
             </div>
-            <p className="text-white/40 text-sm leading-relaxed mb-6">{footer.tagline}</p>
 
-            <div className="flex items-center gap-3">
+            <p
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: "0.75rem",
+                lineHeight: 1.7,
+                color: "rgba(240,237,230,0.35)",
+                marginBottom: "2rem",
+              }}
+            >
+              {footer.tagline}
+            </p>
+
+            {/* Socials row */}
+            <div className="flex items-center gap-2">
               {footer.socials.map((social: any) => {
-                const Icon = (SOCIAL_ICONS[social.icon] ?? ExternalLink) as React.ComponentType<any>;
+                const Icon = SOCIAL_ICONS[social.icon] ?? ExternalLink;
                 return (
                   <motion.a
                     key={social.label}
@@ -83,11 +128,23 @@ export default function Footer() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={social.label}
-                    whileHover={{ scale: 1.1, y: -2 }}
+                    whileHover={{ y: -2 }}
                     whileTap={{ scale: 0.95 }}
-                    className="w-9 h-9 rounded-lg border border-white/10 bg-white/[0.03] flex items-center justify-center text-white/40 hover:text-white hover:border-white/20 hover:bg-white/[0.06] transition-all duration-200"
+                    className="flex items-center justify-center w-8 h-8 transition-all duration-200"
+                    style={{
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      color: "rgba(240,237,230,0.35)",
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.borderColor = "rgba(232,160,32,0.5)";
+                      (e.currentTarget as HTMLElement).style.color = "var(--color-amber)";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.1)";
+                      (e.currentTarget as HTMLElement).style.color = "rgba(240,237,230,0.35)";
+                    }}
                   >
-                    <Icon size={16} />
+                    <Icon size={13} />
                   </motion.a>
                 );
               })}
@@ -96,72 +153,141 @@ export default function Footer() {
 
           {/* Contact column */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="space-y-4"
+            transition={{ duration: 0.5, delay: 0.08 }}
+            className="md:col-span-4 py-14 flex flex-col gap-5"
+            style={{
+              paddingLeft: "3rem",
+              paddingRight: "3rem",
+              borderRight: "1px solid rgba(255,255,255,0.07)",
+            }}
           >
-            <h3 className="text-xs font-mono uppercase tracking-[0.15em] text-white/30 mb-5">
+            <span
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: "0.58rem",
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: "rgba(240,237,230,0.28)",
+                display: "block",
+                marginBottom: "0.5rem",
+              }}
+            >
               Contact
-            </h3>
-            
+            </span>
+
+            {/* Email */}
             <a
               href={`mailto:${footer.email}`}
               onClick={handleEmailClick}
-              className="flex items-start gap-3 text-sm text-white/50 hover:text-white/80 transition-colors duration-200 group"
+              className="group flex items-start gap-3 transition-colors duration-200"
+              style={{ color: "rgba(240,237,230,0.4)" }}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--color-amber)")}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "rgba(240,237,230,0.4)")}
             >
-              <Mail size={15} className="mt-0.5 shrink-0 text-white/20 group-hover:text-cyan-400 transition-colors" />
-              <span className="font-mono">{footer.email}</span>
+              <Mail size={13} className="mt-0.5 shrink-0" />
+              <span
+                style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem" }}
+              >
+                {footer.email}
+              </span>
             </a>
-            
-            <div className="flex items-start gap-3 text-sm text-white/40">
-              <MapPin size={15} className="mt-0.5 shrink-0 text-white/20" />
+
+            {/* Address */}
+            <div
+              className="flex items-start gap-3"
+              style={{ color: "rgba(240,237,230,0.35)" }}
+            >
+              <MapPin size={13} className="mt-0.5 shrink-0" />
               <div>
-                <div className="text-white/50">{footer.institution}</div>
-                <div className="text-xs mt-1">{footer.address}</div>
+                <div
+                  style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "rgba(240,237,230,0.45)" }}
+                >
+                  {footer.institution}
+                </div>
+                <div
+                  style={{ fontFamily: "var(--font-mono)", fontSize: "0.68rem", marginTop: "3px", color: "rgba(240,237,230,0.28)" }}
+                >
+                  {footer.address}
+                </div>
               </div>
             </div>
 
-            {/* Moved IISER Bhopal Link */}
+            {/* IISER link */}
             <a
               href="https://www.iiserb.ac.in"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-white/40 hover:text-white/80 transition-colors duration-200 font-mono flex items-center gap-2 group"
+              className="group inline-flex items-center gap-2 transition-all duration-200"
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: "0.68rem",
+                color: "rgba(240,237,230,0.28)",
+              }}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--color-amber)")}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "rgba(240,237,230,0.28)")}
             >
-              <span className="w-3 h-px bg-white/20 group-hover:w-5 group-hover:bg-cyan-400/60 transition-all duration-300" />
-              IISER Bhopal(Indian Institute of Science Education and Research Bhopal)
-              <ExternalLink size={10} className="opacity-0 group-hover:opacity-60 transition-opacity ml-1" />
+              <span
+                className="transition-all duration-300 group-hover:w-5"
+                style={{ display: "inline-block", width: "12px", height: "1px", background: "currentColor" }}
+              />
+              IISER Bhopal Official Site
+              <ArrowUpRight size={10} style={{ opacity: 0.6 }} />
             </a>
           </motion.div>
 
-          {/* Quick links column */}
+          {/* Quick Links column */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.2 }}
+            transition={{ duration: 0.5, delay: 0.16 }}
+            className="md:col-span-4 py-14"
+            style={{ paddingLeft: "3rem" }}
           >
-            <h3 className="text-xs font-mono uppercase tracking-[0.15em] text-white/30 mb-5">
+            <span
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: "0.58rem",
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: "rgba(240,237,230,0.28)",
+                display: "block",
+                marginBottom: "1.2rem",
+              }}
+            >
               Quick Links
-            </h3>
-            <ul className="space-y-3">
-              {siteConfig.footer.footerLinks.map((link: any) => {
+            </span>
+            <ul className="flex flex-col gap-0" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+              {footer.footerLinks.map((link: any) => {
                 const isExternal = link.href.startsWith("http");
                 return (
-                  <li key={link.href}>
+                  <li
+                    key={link.href}
+                    style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+                  >
                     <Link
                       href={link.href as any}
                       target={isExternal ? "_blank" : undefined}
                       rel={isExternal ? "noopener noreferrer" : undefined}
-                      className="text-sm text-white/40 hover:text-white/80 transition-colors duration-200 font-mono flex items-center gap-2 group"
+                      className="group flex items-center justify-between py-3 transition-all duration-200"
+                      style={{
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "0.72rem",
+                        letterSpacing: "0.06em",
+                        color: "rgba(240,237,230,0.35)",
+                      }}
+                      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "rgba(240,237,230,0.8)")}
+                      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "rgba(240,237,230,0.35)")}
                     >
-                      <span className="w-3 h-px bg-white/20 group-hover:w-5 group-hover:bg-cyan-400/60 transition-all duration-300" />
                       {link.label}
-                      {isExternal && (
-                        <ExternalLink size={10} className="opacity-0 group-hover:opacity-60 transition-opacity ml-1" />
-                      )}
+                      <ArrowUpRight
+                        size={11}
+                        style={{ opacity: 0, transition: "opacity 0.2s" }}
+                        className="group-hover:opacity-60"
+                      />
                     </Link>
                   </li>
                 );
@@ -170,21 +296,38 @@ export default function Footer() {
           </motion.div>
         </div>
 
-        {/* Bottom bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t border-white/[0.06]">
-          <p className="text-xs text-white/20 font-mono">{footer.copyright}</p>
-          <div className="flex items-center gap-4">
+        {/* ── Bottom bar ── */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-6">
+          <p
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: "0.62rem",
+              letterSpacing: "0.08em",
+              color: "rgba(240,237,230,0.18)",
+            }}
+          >
+            {footer.copyright}
+          </p>
+          <div className="flex items-center gap-6">
             {footer.legalLinks.map((link: { href: string; label: string }) => (
               <Link
                 key={link.href}
                 href={link.href as any}
-                className="text-xs text-white/20 hover:text-white/40 transition-colors font-mono"
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "0.62rem",
+                  letterSpacing: "0.08em",
+                  color: "rgba(240,237,230,0.18)",
+                }}
+                onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "rgba(240,237,230,0.5)")}
+                onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "rgba(240,237,230,0.18)")}
               >
                 {link.label}
               </Link>
             ))}
           </div>
         </div>
+
       </div>
     </footer>
   );

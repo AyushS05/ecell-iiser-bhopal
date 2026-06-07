@@ -1,4 +1,10 @@
 "use client";
+// components/StarStream.tsx
+// ─────────────────────────────────────────────────────────────────────────────
+// Ambient particle field — recolored to amber/gold palette.
+// Particles: warm amber. Mouse lines: pale chalk. Connection lines: amber dim.
+// ─────────────────────────────────────────────────────────────────────────────
+
 import { useEffect, useRef } from "react";
 
 export default function StarStream() {
@@ -13,125 +19,122 @@ export default function StarStream() {
     let animationFrameId: number;
     let resizeTimeout: NodeJS.Timeout;
     let particles: Particle[] = [];
-    
-    let mouse = { x: -1000, y: -1000 }; 
-    const handleMouseMove = (e: MouseEvent) => {
-      mouse.x = e.clientX;
-      mouse.y = e.clientY;
-    };
-    const handleMouseOut = () => {
-      mouse = { x: -1000, y: -1000 };
-    };
-    
+
+    let mouse = { x: -1000, y: -1000 };
+    const handleMouseMove = (e: MouseEvent) => { mouse.x = e.clientX; mouse.y = e.clientY; };
+    const handleMouseOut  = () => { mouse = { x: -1000, y: -1000 }; };
+
     window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseout", handleMouseOut);
+    window.addEventListener("mouseout",  handleMouseOut);
 
     class Particle {
-      x: number;
-      y: number;
-      vx: number;
-      vy: number;
+      x: number; y: number;
+      vx: number; vy: number;
       size: number;
 
       constructor() {
-        this.x = Math.random() * canvas!.width;
-        this.y = Math.random() * canvas!.height;
-        this.vx = (Math.random() - 0.5) * 0.6; 
-        this.vy = (Math.random() - 0.5) * 0.6;
-        this.size = Math.random() * 1.5 + 0.5;
+        this.x    = Math.random() * canvas!.width;
+        this.y    = Math.random() * canvas!.height;
+        this.vx   = (Math.random() - 0.5) * 0.5;
+        this.vy   = (Math.random() - 0.5) * 0.5;
+        // Mix of sizes: most tiny, a few slightly larger
+        this.size = Math.random() < 0.85
+          ? Math.random() * 0.9 + 0.3   // tiny: 0.3–1.2
+          : Math.random() * 0.8 + 1.2;  // accent: 1.2–2.0
       }
 
       update() {
         this.x += this.vx;
         this.y += this.vy;
-        if (this.x < 0 || this.x > canvas!.width) this.vx *= -1;
-        if (this.y < 0 || this.y > canvas!.height) this.vy *= -1;
+        if (this.x < 0 || this.x > canvas!.width)  this.vx *= -1;
+        if (this.y < 0 || this.y > canvas!.height)  this.vy *= -1;
       }
 
       draw() {
         if (!ctx) return;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(34, 211, 238, 0.8)"; 
+        // Amber particle — larger ones are brighter
+        const alpha = this.size > 1.2 ? 0.75 : 0.45;
+        ctx.fillStyle = `rgba(232, 160, 32, ${alpha})`;
         ctx.fill();
       }
     }
 
     const initParticles = () => {
       particles = [];
-      const numberOfParticles = Math.floor((canvas.width * canvas.height) / 12000); 
-      const limit = Math.min(numberOfParticles, 50); // Kept highly optimized
-      
-      for (let i = 0; i < limit; i++) {
-        particles.push(new Particle());
-      }
+      const count = Math.min(
+        Math.floor((canvas.width * canvas.height) / 12000),
+        55
+      );
+      for (let i = 0; i < count; i++) particles.push(new Particle());
     };
 
-    // PERFORMANCE FIX: Debounce the resize event to prevent mobile scroll lag
     const resize = () => {
       clearTimeout(resizeTimeout);
       resizeTimeout = setTimeout(() => {
-        canvas.width = window.innerWidth;
+        canvas.width  = window.innerWidth;
         canvas.height = window.innerHeight;
         initParticles();
-      }, 200); 
+      }, 200);
     };
 
-    // Initial setup (run instantly, without debounce)
-    canvas.width = window.innerWidth;
+    // Initial setup
+    canvas.width  = window.innerWidth;
     canvas.height = window.innerHeight;
     initParticles();
-    
     window.addEventListener("resize", resize);
 
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
+
       for (let i = 0; i < particles.length; i++) {
         particles[i].update();
         particles[i].draw();
-        
-        for (let j = i; j < particles.length; j++) {
+
+        // Particle–particle connection lines — amber, very faint
+        for (let j = i + 1; j < particles.length; j++) {
           const dx = particles[i].x - particles[j].x;
           const dy = particles[i].y - particles[j].y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          
-          if (distance < 80) {
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 90) {
             ctx.beginPath();
-            ctx.strokeStyle = `rgba(34, 211, 238, ${0.15 - distance / 800})`;
-            ctx.lineWidth = 0.6;
+            ctx.strokeStyle = `rgba(232, 160, 32, ${0.12 - dist / 900})`;
+            ctx.lineWidth = 0.5;
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
             ctx.stroke();
           }
         }
 
-        const dxMouse = particles[i].x - mouse.x;
-        const dyMouse = particles[i].y - mouse.y;
-        const distanceMouse = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
-        
-        if (distanceMouse < 120) {
+        // Mouse repulsion + connection line — chalk/warm white
+        const dxM = particles[i].x - mouse.x;
+        const dyM = particles[i].y - mouse.y;
+        const distM = Math.sqrt(dxM * dxM + dyM * dyM);
+        if (distM < 120) {
           ctx.beginPath();
-          ctx.strokeStyle = `rgba(167, 139, 250, ${0.25 - distanceMouse / 720})`;
-          ctx.lineWidth = 1;
+          // Warm white line toward cursor — subtle, not colored
+          ctx.strokeStyle = `rgba(240, 237, 230, ${0.18 - distM / 800})`;
+          ctx.lineWidth = 0.8;
           ctx.moveTo(particles[i].x, particles[i].y);
           ctx.lineTo(mouse.x, mouse.y);
           ctx.stroke();
-          
-          particles[i].x -= dxMouse * 0.015;
-          particles[i].y -= dyMouse * 0.015;
+
+          // Gentle repulsion
+          particles[i].x -= dxM * 0.012;
+          particles[i].y -= dyM * 0.012;
         }
       }
-      
+
       animationFrameId = requestAnimationFrame(animate);
     };
-    
+
     animate();
 
     return () => {
       window.removeEventListener("resize", resize);
       window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseout", handleMouseOut);
+      window.removeEventListener("mouseout",  handleMouseOut);
       cancelAnimationFrame(animationFrameId);
       clearTimeout(resizeTimeout);
     };
@@ -140,8 +143,8 @@ export default function StarStream() {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none opacity-70 z-0" 
-      style={{ transform: "translateZ(0)", willChange: "transform" }}
+      className="fixed inset-0 pointer-events-none z-0"
+      style={{ opacity: 0.55, transform: "translateZ(0)", willChange: "transform" }}
       aria-hidden="true"
     />
   );
