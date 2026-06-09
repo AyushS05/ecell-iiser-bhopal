@@ -2,7 +2,8 @@
 // components/sections/Footer.tsx
 // ─────────────────────────────────────────────────────────────────────────────
 // Editorial Brutalism Footer.
-// Ruled borders, DM Mono, single amber accent. No glass, no gradients.
+// FIXED: High contrast text, structured borders, hardcoded fonts and hex colors.
+// FIXED: Duplicate React key error on legal links mapping.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { motion } from "framer-motion";
@@ -20,7 +21,7 @@ const SOCIAL_ICONS: Record<string, React.ComponentType<{ size?: number }>> = {
 };
 
 export default function Footer() {
-  const { footer, name, shortName } = siteConfig as any;
+  const { footer } = siteConfig as any;
 
   const handleEmailClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
@@ -42,14 +43,14 @@ export default function Footer() {
     <footer
       id="contact"
       className="relative"
-      style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
+      style={{ borderTop: "1px solid rgba(255,255,255,0.15)" }}
     >
       {/* Top amber rule accent */}
       <div
-        className="absolute top-0 left-0 right-0 h-px"
+        className="absolute top-0 left-0 right-0 h-[2px]"
         style={{
           background:
-            "linear-gradient(90deg, transparent 0%, rgba(232,160,32,0.4) 40%, rgba(232,160,32,0.4) 60%, transparent 100%)",
+            "linear-gradient(90deg, transparent 0%, rgba(232,160,32,0.8) 40%, rgba(232,160,32,0.8) 60%, transparent 100%)",
         }}
       />
 
@@ -58,7 +59,7 @@ export default function Footer() {
         {/* ── Upper block: brand + columns ── */}
         <div
           className="grid grid-cols-1 md:grid-cols-12 gap-0"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.15)" }}
         >
           {/* Brand column */}
           <motion.div
@@ -67,7 +68,7 @@ export default function Footer() {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
             className="md:col-span-4 py-14"
-            style={{ borderRight: "1px solid rgba(255,255,255,0.07)", paddingRight: "3rem" }}
+            style={{ borderRight: "1px solid rgba(255,255,255,0.15)", paddingRight: "3rem" }}
           >
             {/* Wordmark */}
             <div className="flex items-center gap-3 mb-6">
@@ -77,15 +78,15 @@ export default function Footer() {
                 width={32}
                 height={32}
                 className="object-contain"
-                style={{ width: "auto", height: "auto", opacity: 0.8 }}
+                style={{ width: "auto", height: "auto", opacity: 0.9 }}
               />
               <div>
                 <div
                   style={{
-                    fontFamily: "var(--font-display)",
-                    fontSize: "1.3rem",
+                    fontFamily: "'Bebas Neue', sans-serif",
+                    fontSize: "1.6rem",
                     letterSpacing: "0.06em",
-                    color: "#f0ede6",
+                    color: "#ffffff",
                     lineHeight: 1,
                   }}
                 >
@@ -93,11 +94,12 @@ export default function Footer() {
                 </div>
                 <div
                   style={{
-                    fontFamily: "var(--font-mono)",
-                    fontSize: "0.58rem",
+                    fontFamily: "'DM Mono', monospace",
+                    fontSize: "0.6rem",
                     letterSpacing: "0.12em",
-                    color: "rgba(240,237,230,0.28)",
+                    color: "rgba(255,255,255,0.5)",
                     textTransform: "uppercase",
+                    marginTop: "2px",
                   }}
                 >
                   IISER Bhopal
@@ -107,10 +109,10 @@ export default function Footer() {
 
             <p
               style={{
-                fontFamily: "var(--font-mono)",
+                fontFamily: "'DM Mono', monospace",
                 fontSize: "0.75rem",
                 lineHeight: 1.7,
-                color: "rgba(240,237,230,0.35)",
+                color: "rgba(255,255,255,0.6)",
                 marginBottom: "2rem",
               }}
             >
@@ -118,7 +120,7 @@ export default function Footer() {
             </p>
 
             {/* Socials row */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {footer.socials.map((social: any) => {
                 const Icon = SOCIAL_ICONS[social.icon] ?? ExternalLink;
                 return (
@@ -130,21 +132,24 @@ export default function Footer() {
                     aria-label={social.label}
                     whileHover={{ y: -2 }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex items-center justify-center w-8 h-8 transition-all duration-200"
+                    className="flex items-center justify-center w-9 h-9 transition-all duration-200"
                     style={{
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      color: "rgba(240,237,230,0.35)",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      color: "rgba(255,255,255,0.6)",
+                      background: "rgba(255,255,255,0.02)",
                     }}
                     onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLElement).style.borderColor = "rgba(232,160,32,0.5)";
-                      (e.currentTarget as HTMLElement).style.color = "var(--color-amber)";
+                      (e.currentTarget as HTMLElement).style.borderColor = "#e8a020";
+                      (e.currentTarget as HTMLElement).style.color = "#e8a020";
+                      (e.currentTarget as HTMLElement).style.background = "rgba(232,160,32,0.05)";
                     }}
                     onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.1)";
-                      (e.currentTarget as HTMLElement).style.color = "rgba(240,237,230,0.35)";
+                      (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.2)";
+                      (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.6)";
+                      (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.02)";
                     }}
                   >
-                    <Icon size={13} />
+                    <Icon size={14} />
                   </motion.a>
                 );
               })}
@@ -157,20 +162,20 @@ export default function Footer() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.08 }}
-            className="md:col-span-4 py-14 flex flex-col gap-5"
+            className="md:col-span-4 py-14 flex flex-col gap-6"
             style={{
               paddingLeft: "3rem",
               paddingRight: "3rem",
-              borderRight: "1px solid rgba(255,255,255,0.07)",
+              borderRight: "1px solid rgba(255,255,255,0.15)",
             }}
           >
             <span
               style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: "0.58rem",
+                fontFamily: "'DM Mono', monospace",
+                fontSize: "0.65rem",
                 letterSpacing: "0.18em",
                 textTransform: "uppercase",
-                color: "rgba(240,237,230,0.28)",
+                color: "rgba(255,255,255,0.4)",
                 display: "block",
                 marginBottom: "0.5rem",
               }}
@@ -183,13 +188,13 @@ export default function Footer() {
               href={`mailto:${footer.email}`}
               onClick={handleEmailClick}
               className="group flex items-start gap-3 transition-colors duration-200"
-              style={{ color: "rgba(240,237,230,0.4)" }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--color-amber)")}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "rgba(240,237,230,0.4)")}
+              style={{ color: "rgba(255,255,255,0.6)" }}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#e8a020")}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.6)")}
             >
-              <Mail size={13} className="mt-0.5 shrink-0" />
+              <Mail size={14} className="mt-0.5 shrink-0" />
               <span
-                style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem" }}
+                style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.8rem" }}
               >
                 {footer.email}
               </span>
@@ -198,17 +203,17 @@ export default function Footer() {
             {/* Address */}
             <div
               className="flex items-start gap-3"
-              style={{ color: "rgba(240,237,230,0.35)" }}
+              style={{ color: "rgba(255,255,255,0.6)" }}
             >
-              <MapPin size={13} className="mt-0.5 shrink-0" />
+              <MapPin size={14} className="mt-0.5 shrink-0" />
               <div>
                 <div
-                  style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "rgba(240,237,230,0.45)" }}
+                  style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.8rem", color: "rgba(255,255,255,0.8)" }}
                 >
                   {footer.institution}
                 </div>
                 <div
-                  style={{ fontFamily: "var(--font-mono)", fontSize: "0.68rem", marginTop: "3px", color: "rgba(240,237,230,0.28)" }}
+                  style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.7rem", marginTop: "4px", color: "rgba(255,255,255,0.4)" }}
                 >
                   {footer.address}
                 </div>
@@ -220,21 +225,21 @@ export default function Footer() {
               href="https://www.iiserb.ac.in"
               target="_blank"
               rel="noopener noreferrer"
-              className="group inline-flex items-center gap-2 transition-all duration-200"
+              className="group inline-flex items-center gap-2 transition-all duration-200 mt-2"
               style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: "0.68rem",
-                color: "rgba(240,237,230,0.28)",
+                fontFamily: "'DM Mono', monospace",
+                fontSize: "0.7rem",
+                color: "rgba(255,255,255,0.4)",
               }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--color-amber)")}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "rgba(240,237,230,0.28)")}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#e8a020")}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.4)")}
             >
               <span
                 className="transition-all duration-300 group-hover:w-5"
                 style={{ display: "inline-block", width: "12px", height: "1px", background: "currentColor" }}
               />
               IISER Bhopal Official Site
-              <ArrowUpRight size={10} style={{ opacity: 0.6 }} />
+              <ArrowUpRight size={11} style={{ opacity: 0.8 }} />
             </a>
           </motion.div>
 
@@ -249,24 +254,24 @@ export default function Footer() {
           >
             <span
               style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: "0.58rem",
+                fontFamily: "'DM Mono', monospace",
+                fontSize: "0.65rem",
                 letterSpacing: "0.18em",
                 textTransform: "uppercase",
-                color: "rgba(240,237,230,0.28)",
+                color: "rgba(255,255,255,0.4)",
                 display: "block",
-                marginBottom: "1.2rem",
+                marginBottom: "1.5rem",
               }}
             >
               Quick Links
             </span>
-            <ul className="flex flex-col gap-0" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+            <ul className="flex flex-col gap-0" style={{ borderTop: "1px solid rgba(255,255,255,0.15)" }}>
               {footer.footerLinks.map((link: any) => {
                 const isExternal = link.href.startsWith("http");
                 return (
                   <li
                     key={link.href}
-                    style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+                    style={{ borderBottom: "1px solid rgba(255,255,255,0.15)" }}
                   >
                     <Link
                       href={link.href as any}
@@ -274,19 +279,19 @@ export default function Footer() {
                       rel={isExternal ? "noopener noreferrer" : undefined}
                       className="group flex items-center justify-between py-3 transition-all duration-200"
                       style={{
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "0.72rem",
+                        fontFamily: "'DM Mono', monospace",
+                        fontSize: "0.75rem",
                         letterSpacing: "0.06em",
-                        color: "rgba(240,237,230,0.35)",
+                        color: "rgba(255,255,255,0.6)",
                       }}
-                      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "rgba(240,237,230,0.8)")}
-                      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "rgba(240,237,230,0.35)")}
+                      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#ffffff")}
+                      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.6)")}
                     >
                       {link.label}
                       <ArrowUpRight
-                        size={11}
-                        style={{ opacity: 0, transition: "opacity 0.2s" }}
-                        className="group-hover:opacity-60"
+                        size={12}
+                        style={{ opacity: 0, transition: "opacity 0.2s", color: "#e8a020" }}
+                        className="group-hover:opacity-100"
                       />
                     </Link>
                   </li>
@@ -300,10 +305,10 @@ export default function Footer() {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-6">
           <p
             style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: "0.62rem",
+              fontFamily: "'DM Mono', monospace",
+              fontSize: "0.65rem",
               letterSpacing: "0.08em",
-              color: "rgba(240,237,230,0.18)",
+              color: "rgba(255,255,255,0.4)",
             }}
           >
             {footer.copyright}
@@ -311,16 +316,16 @@ export default function Footer() {
           <div className="flex items-center gap-6">
             {footer.legalLinks.map((link: { href: string; label: string }) => (
               <Link
-                key={link.href}
+                key={link.label} // ── FIX: Uses link.label instead of link.href
                 href={link.href as any}
                 style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "0.62rem",
+                  fontFamily: "'DM Mono', monospace",
+                  fontSize: "0.65rem",
                   letterSpacing: "0.08em",
-                  color: "rgba(240,237,230,0.18)",
+                  color: "rgba(255,255,255,0.4)",
                 }}
-                onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "rgba(240,237,230,0.5)")}
-                onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "rgba(240,237,230,0.18)")}
+                onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#ffffff")}
+                onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "rgba(255,255,255,0.4)")}
               >
                 {link.label}
               </Link>

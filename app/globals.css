@@ -1,13 +1,30 @@
 /* app/globals.css */
 /* ─────────────────────────────────────────────────────────────────────────── */
 /* Editorial Brutalism — E-Cell IISER Bhopal                                  */
-/* Fonts loaded via <link> in layout.tsx, NOT here (Tailwind v4 / Turbopack  */
-/* requires @import "tailwindcss" to be the very first statement).            */
+/* Fonts loaded via <link> in layout.tsx.                                     */
 /* ─────────────────────────────────────────────────────────────────────────── */
 
 @import "tailwindcss";
 
-/* ── CSS Custom Properties ───────────────────────────────────────────────── */
+/* ── Tailwind Theme Mapping (Crucial for Tailwind v4) ────────────────────── */
+@theme {
+  --color-bg: #0c0b09;
+  --color-surface: #111008;
+  --color-surface-2: #161410;
+  
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.18);
+
+  --color-amber: #E8A020;
+  --color-amber-dim: rgba(232, 160, 32, 0.12);
+  --color-amber-mid: rgba(232, 160, 32, 0.35);
+
+  --font-display: 'Bebas Neue', 'Impact', sans-serif;
+  --font-mono: 'DM Mono', 'Fira Code', monospace;
+  --font-serif: 'DM Serif Display', Georgia, serif;
+}
+
+/* ── CSS Custom Properties (For standard CSS usage) ──────────────────────── */
 :root {
   --color-bg: #0c0b09;
   --color-surface: #111008;
@@ -15,7 +32,6 @@
   --color-border: rgba(255, 255, 255, 0.08);
   --color-border-strong: rgba(255, 255, 255, 0.18);
 
-  /* Single accent — amber/gold */
   --color-amber: #E8A020;
   --color-amber-dim: rgba(232, 160, 32, 0.12);
   --color-amber-mid: rgba(232, 160, 32, 0.35);

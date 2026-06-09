@@ -7,6 +7,7 @@ import BentoGrid from "@/components/sections/BentoGrid";
 import PitchPortal from "@/components/sections/PitchPortal";
 import Footer from "@/components/sections/Footer";
 import InstaFeed from "@/components/sections/InstaFeed";
+import ScrollRestorer from "@/components/ScrollRestorer"; 
 
 export const metadata: Metadata = {
   title: "E-Cell IISER Bhopal | Student Startup Incubator",
@@ -42,6 +43,7 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <main className="min-h-screen">
+      <ScrollRestorer />
       <ScrollIntro />
       <Hero />
       <BentoGrid />

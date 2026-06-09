@@ -1,8 +1,7 @@
 "use client";
 // components/ScrollIntro.tsx
 // ─────────────────────────────────────────────────────────────────────────────
-// Arc Reactor recolored: cyan (#00f5ff) → amber (#E8A020), blue (#0044ff) → 
-// dark amber (#7a3e00). All animation logic unchanged from original.
+// E-Cell Arc Reactor — Cinematic Slow Scroll
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useRef, useEffect, useState, useCallback, memo } from "react";
@@ -11,18 +10,21 @@ import {
   useMotionValue, useMotionValueEvent, animate,
   MotionValue
 } from "framer-motion";
-import { ChevronsDown } from "lucide-react";
+import { ArrowDown } from "lucide-react";
+import { useIntroControl } from "@/components/IntroProvider";
 
-// Global memory so it only plays once per session.
 let hasPlayedIntro = false;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SCRAMBLE TEXT (unchanged)
-// ─────────────────────────────────────────────────────────────────────────────
-const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$Σ∆Ω≈<>?/\\|{}[]*&%";
+// ─── SCRAMBLE TEXT ────────────────────────────────────────────────────────────
+const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$Σ∆Ω≈<>|{}[]";
 
-function ScrambleText({ text, active, speed = 36, stagger = 60, style }: {
-  text: string; active: boolean; speed?: number; stagger?: number;
+function ScrambleText({
+  text, active, speed = 36, stagger = 60, style,
+}: {
+  text: string;
+  active: boolean;
+  speed?: number;
+  stagger?: number;
   style?: React.CSSProperties;
 }) {
   const elRef = useRef<HTMLDivElement>(null);
@@ -33,215 +35,401 @@ function ScrambleText({ text, active, speed = 36, stagger = 60, style }: {
       elRef.current.innerText = text.split("").map(() => "\u00A0").join("");
       return;
     }
-
     let elapsed = 0;
     let lastTime = performance.now();
-    let animationId: number;
+    let animId: number;
     const resolved = new Array(text.length).fill(false);
 
-    const frame = (time: number) => {
-      const delta = time - lastTime;
-      if (delta > speed) {
-        elapsed += delta;
-        lastTime = time;
-        const next = text.split("").map((ch, i) => {
-          if (ch === " " || ch === "—") return ch;
-          if (elapsed > i * stagger + 600) resolved[i] = true;
-          return resolved[i] ? ch : CHARS[Math.floor(Math.random() * CHARS.length)];
-        }).join("");
-        if (elRef.current) elRef.current.innerText = next;
-        if (resolved.every(Boolean)) return;
-      }
-      animationId = requestAnimationFrame(frame);
-    };
+    const startId = requestAnimationFrame(() => {
+      const frame = (time: number) => {
+        const delta = time - lastTime;
+        if (delta > speed) {
+          elapsed += delta;
+          lastTime = time;
+          const next = text
+            .split("")
+            .map((ch, i) => {
+              if (ch === " " || ch === "—" || ch === "/") return ch;
+              if (elapsed > i * stagger + 500) resolved[i] = true;
+              return resolved[i]
+                ? ch
+                : CHARS[Math.floor(Math.random() * CHARS.length)];
+            })
+            .join("");
+          if (elRef.current) elRef.current.innerText = next;
+          if (resolved.every(Boolean)) return;
+        }
+        animId = requestAnimationFrame(frame);
+      };
+      animId = requestAnimationFrame(frame);
+    });
 
-    animationId = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(animationId);
+    return () => {
+      cancelAnimationFrame(startId);
+      cancelAnimationFrame(animId);
+    };
   }, [active, text, speed, stagger]);
 
   return <div ref={elRef} style={style} />;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ARC REACTOR — recolored to amber palette
-// #00f5ff → #E8A020 (amber)
-// #0044ff → #7a3e00 (dark amber / bronze)
-// White core stays white (it's the plasma burst)
-// ─────────────────────────────────────────────────────────────────────────────
-const ArcReactor = memo(function ArcReactor({ progress }: { progress: MotionValue<number> }) {
-  const ring1Rotate  = useTransform(progress, [0, 1], [0, 360]);
-  const ring2Rotate  = useTransform(progress, [0, 1], [0, -420]);
-  const ring3Rotate  = useTransform(progress, [0, 1], [0, 180]);
-  const corePower    = useTransform(progress, [0, 0.3], [0, 1]);
-  const irisOpen     = useTransform(progress, [0.75, 0.96], [150, 240]);
-  const flashScale   = useTransform(progress, [0.96, 0.99], [0, 250]);
-  const flashOpacity = useTransform(progress, [0.96, 0.98], [0, 1]);
+// ─── RING LABEL ───────────────────────────────────────────────────────────────
+function RingLabel({
+  cx, cy, labelX, labelY,
+  label, sublabel, opacity,
+  lineToX, lineToY,
+}: {
+  cx: number; cy: number;
+  labelX: number; labelY: number;
+  label: string; sublabel: string;
+  opacity: MotionValue<number>;
+  lineToX: number; lineToY: number;
+}) {
+  const isRight = labelX > cx;
+  const labelW = label.length * 7.2 + 12;
+  const subW   = sublabel.length * 5.8 + 12;
+  const boxW   = Math.max(labelW, subW);
+  const boxX   = isRight ? labelX - 5 : labelX - boxW + 5;
 
   return (
-    <div style={{ position: "relative", width: 300, height: 300 }}>
-      {/* Central Flash — stays white (it's the burst moment) */}
-      <motion.div style={{
-        position: "absolute", top: "50%", left: "50%",
-        width: 20, height: 20, x: "-50%", y: "-50%",
-        borderRadius: "50%", background: "#ffffff",
-        // Amber glow instead of cyan
-        boxShadow: "0 0 60px 30px #ffffff, 0 0 100px 50px #E8A020",
-        scale: flashScale, opacity: flashOpacity, zIndex: 50,
-        willChange: "transform,opacity",
-      }} />
+    <motion.g style={{ opacity }}>
+      <line
+        x1={lineToX} y1={lineToY}
+        x2={labelX + (isRight ? -4 : 4)} y2={labelY}
+        stroke="rgba(232,160,32,0.3)" strokeWidth="0.7" strokeDasharray="3 2.5"
+      />
+      <circle cx={lineToX} cy={lineToY} r="2" fill="#E8A020" opacity="0.6" />
+      {/* Backdrop */}
+      <rect
+        x={boxX} y={labelY - 18}
+        width={boxW} height={30}
+        rx="2"
+        fill="rgba(12,11,9,0.75)"
+        stroke="rgba(232,160,32,0.15)" strokeWidth="0.5"
+      />
+      <text
+        x={labelX} y={labelY - 4}
+        textAnchor={isRight ? "start" : "end"}
+        fontSize="11" fill="#E8A020" opacity="0.95"
+        fontFamily="'DM Mono', monospace" letterSpacing="0.12em" fontWeight="500"
+        textRendering="geometricPrecision"
+        style={{ WebkitFontSmoothing: "antialiased", MozOsxFontSmoothing: "grayscale" }}
+      >
+        {label}
+      </text>
+      <text
+        x={labelX} y={labelY + 9}
+        textAnchor={isRight ? "start" : "end"}
+        fontSize="9" fill="rgba(240,237,230,0.55)"
+        fontFamily="'DM Mono', monospace" letterSpacing="0.08em"
+        textRendering="geometricPrecision"
+        style={{ WebkitFontSmoothing: "antialiased", MozOsxFontSmoothing: "grayscale" }}
+      >
+        {sublabel}
+      </text>
+    </motion.g>
+  );
+}
 
-      {/* Background Glow — amber instead of cyan */}
-      <motion.div style={{
-        position: "absolute", inset: 0,
-        background: "radial-gradient(circle, #E8A020 0%, transparent 70%)",
-        filter: "blur(40px)", opacity: corePower, zIndex: -1,
-        willChange: "opacity",
-      }} />
+// ─── REACTOR ──────────────────────────────────────────────────────────────────
+const Reactor = memo(function Reactor({
+  progress, tiltX, tiltY, dismantle,
+}: {
+  progress:  MotionValue<number>;
+  tiltX:     MotionValue<number>;
+  tiltY:     MotionValue<number>;
+  dismantle: MotionValue<number>;
+}) {
+  const ring1Rot = useTransform(progress, [0, 1], [0, 540]);
+  const ring2Rot = useTransform(progress, [0, 1], [0, -720]);
+  const ring3Rot = useTransform(progress, [0, 1], [0, 300]);
+  const corePow  = useTransform(progress, [0, 0.10], [0, 1]);
+  const irisOff  = useTransform(progress, [0.75, 0.94], [250, 392]);
+  
+  // NOTE: Doubled flash scale since parent container scale is halved
+  const flashSc  = useTransform(progress, [0.95, 0.99], [0, 600]); 
+  const flashOp  = useTransform(progress, [0.95, 0.98], [0, 1]);
 
-      <svg width="300" height="300" viewBox="0 0 300 300" fill="none" style={{ overflow: "visible", willChange: "transform" }}>
+  const r1dx      = useTransform(dismantle, [0, 1], [0, -103]);
+  const r1dy      = useTransform(dismantle, [0, 1], [0, -113]);
+  const r2dx      = useTransform(dismantle, [0, 1], [0,  113]);
+  const r2dy      = useTransform(dismantle, [0, 1], [0,   97]);
+  const r3dx      = useTransform(dismantle, [0, 1], [0,   92]);
+  const r3dy      = useTransform(dismantle, [0, 1], [0, -100]);
+  const coreDx    = useTransform(dismantle, [0, 1], [0,  -80]);
+  const coreDy    = useTransform(dismantle, [0, 1], [0,  108]);
+  const coreScale = useTransform(dismantle, [0, 1], [1, 0.75]);
+
+  const coreGlowOp = useTransform(dismantle, [0, 1], [1, 1]);
+  const housingOp  = useTransform(dismantle, [0, 1], [1, 1]);
+  const labelOp    = useTransform(dismantle, [0.35, 0.85], [0, 1]);
+  const glowOp     = useTransform(dismantle, [0, 0.7], [1, 0]);
+  const ringBaseOp = useTransform(dismantle, [0, 1], [1, 1]);
+
+  const coreOp = useTransform(
+    [corePow, coreGlowOp] as MotionValue[],
+    ([p, g]) => (p as number) * (g as number)
+  );
+
+  return (
+    <motion.div
+      style={{
+        width: "100%", height: "100%", position: "relative",
+        rotateX: tiltX, rotateY: tiltY,
+        transformStyle: "preserve-3d",
+      }}
+    >
+      {/* Ambient glow - Doubled inset and blur to match halved scale */}
+      <motion.div
+        style={{
+          position: "absolute", inset: -120, borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(232,160,32,0.22) 0%, transparent 65%)",
+          filter: "blur(88px)",
+          opacity: glowOp,
+          pointerEvents: "none", zIndex: 0,
+        }}
+      />
+
+      <motion.div
+        style={{
+          position: "absolute", top: "50%", left: "50%",
+          width: 16, height: 16, x: "-50%", y: "-50%",
+          borderRadius: "50%", background: "#ffffff",
+          boxShadow: "0 0 60px 30px #fff, 0 0 120px 60px #E8A020",
+          scale: flashSc, opacity: flashOp, zIndex: 60,
+        }}
+      />
+
+      <svg
+        viewBox="0 0 500 500"
+        style={{
+          width: "100%", height: "100%", overflow: "visible",
+        }}
+      >
         <defs>
-          {/* Titanium/dark frame — unchanged, it's structural */}
-          <linearGradient id="titanium" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%"   stopColor="#2a2d3e" />
-            <stop offset="50%"  stopColor="#0a0b10" />
-            <stop offset="100%" stopColor="#3d435c" />
-          </linearGradient>
-
-          {/* Outer ring accent — amber instead of cyan */}
-          <linearGradient id="copper-accent" x1="100%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%"   stopColor="#E8A020" stopOpacity="0.25" />
-            <stop offset="50%"  stopColor="#050508" />
-            <stop offset="100%" stopColor="#7a3e00" stopOpacity="0.4" />
-          </linearGradient>
-
-          {/* Core plasma — amber/gold burst */}
-          <radialGradient id="plasma" cx="50%" cy="50%" r="50%">
+          <radialGradient id="ecell-plasma" cx="50%" cy="50%" r="50%">
             <stop offset="0%"   stopColor="#ffffff" />
-            <stop offset="25%"  stopColor="#ffd97a" />
+            <stop offset="22%"  stopColor="#ffe0a0" />
             <stop offset="55%"  stopColor="#E8A020" />
             <stop offset="85%"  stopColor="#7a3e00" />
             <stop offset="100%" stopColor="#000000" stopOpacity="0" />
           </radialGradient>
+          <linearGradient id="ecell-titanium" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%"   stopColor="#2a2d3e" />
+            <stop offset="50%"  stopColor="#0c0b09" />
+            <stop offset="100%" stopColor="#3a3f5c" />
+          </linearGradient>
+          <linearGradient id="ecell-shell" x1="100%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%"   stopColor="#E8A020" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#5a2e00" stopOpacity="0.5" />
+          </linearGradient>
+          <filter id="ecell-core-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="8" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
         </defs>
 
-        {/* Outer shell */}
-        <circle cx="150" cy="150" r="140" fill="url(#copper-accent)" stroke="#1a1d2e" strokeWidth="2" />
-        <circle cx="150" cy="150" r="130" fill="url(#titanium)"      stroke="#000"   strokeWidth="6" />
+        <motion.circle cx="250" cy="250" r="217"
+          fill="url(#ecell-shell)"
+          style={{ opacity: housingOp }}
+        />
+        <motion.circle cx="250" cy="250" r="203"
+          fill="url(#ecell-titanium)"
+          stroke="#000000" strokeWidth="10"
+          style={{ opacity: housingOp }}
+        />
 
-        {/* Ring 1 — amber tick marks */}
-        <motion.g style={{ rotate: ring1Rotate, transformOrigin: "150px 150px" }}>
-          <circle cx="150" cy="150" r="115" stroke="#E8A020" strokeWidth="1"   strokeDasharray="2 12" opacity="0.45" />
-          <circle cx="150" cy="150" r="105" stroke="url(#titanium)" strokeWidth="12" strokeDasharray="60 20" strokeLinecap="round" />
-          <circle cx="150" cy="150" r="105" stroke="#E8A020" strokeWidth="2"   strokeDasharray="0 80" strokeLinecap="round" />
-        </motion.g>
-
-        {/* Ring 2 — amber segments + spoke dividers */}
-        <motion.g style={{ rotate: ring2Rotate, transformOrigin: "150px 150px" }}>
-          <circle cx="150" cy="150" r="85" stroke="#0a0b10" strokeWidth="16" />
-          <circle cx="150" cy="150" r="85" stroke="#E8A020" strokeWidth="4"  strokeDasharray="15 45" />
-          {Array.from({ length: 12 }).map((_, i) => {
-            const a = (i / 12) * Math.PI * 2;
-            return (
-              <line key={i}
-                x1={+(150 + Math.cos(a) * 75).toFixed(2)} y1={+(150 + Math.sin(a) * 75).toFixed(2)}
-                x2={+(150 + Math.cos(a) * 95).toFixed(2)} y2={+(150 + Math.sin(a) * 95).toFixed(2)}
-                stroke="#1a1d2e" strokeWidth="4"
-              />
-            );
-          })}
-        </motion.g>
-
-        {/* Ring 3 — iris / aperture — amber */}
-        <motion.g style={{ rotate: ring3Rotate, transformOrigin: "150px 150px" }}>
-          <circle cx="150" cy="150" r="60" stroke="#7a3e00" strokeWidth="8" opacity="0.35" />
-          <motion.circle
-            cx="150" cy="150" r="60"
-            stroke="#E8A020" strokeWidth="8"
-            strokeDasharray="200 100"
-            strokeDashoffset={irisOpen}
-            strokeLinecap="round"
+        <motion.g style={{ x: r1dx, y: r1dy }}>
+          <motion.g
+            style={{
+              rotate: ring1Rot,
+              transformOrigin: "250px 250px",
+              opacity: ringBaseOp,
+            }}
+          >
+            <circle cx="250" cy="250" r="180"
+              stroke="#E8A020" strokeWidth="2.5" strokeDasharray="7 15"
+              fill="none" opacity="0.65"
+            />
+            <circle cx="250" cy="250" r="160"
+              stroke="url(#ecell-titanium)" strokeWidth="27"
+              strokeDasharray="87 37" strokeLinecap="square" fill="none"
+            />
+            <circle cx="250" cy="250" r="160"
+              stroke="#E8A020" strokeWidth="4"
+              strokeDasharray="0 123" strokeLinecap="round" fill="none"
+            />
+          </motion.g>
+          <RingLabel
+            cx={250} cy={250} labelX={87} labelY={100}
+            label="GROWTH ORBIT" sublabel="SCALE & SUSTAIN"
+            opacity={labelOp}
+            lineToX={250 + 180 * Math.cos(Math.PI * 1.18)}
+            lineToY={250 + 180 * Math.sin(Math.PI * 1.18)}
           />
         </motion.g>
 
-        {/* Core plasma burst */}
-        <motion.circle cx="150" cy="150" r="45" fill="url(#plasma)" style={{ opacity: corePower }} />
-        {/* Bright center point */}
-        <motion.circle cx="150" cy="150" r="20" fill="#ffffff"        style={{ opacity: corePower }} />
+        <motion.g style={{ x: r2dx, y: r2dy }}>
+          <motion.g
+            style={{
+              rotate: ring2Rot,
+              transformOrigin: "250px 250px",
+              opacity: ringBaseOp,
+            }}
+          >
+            <circle cx="250" cy="250" r="142"
+              stroke="#0c0b09" strokeWidth="33" fill="none"
+            />
+            <circle cx="250" cy="250" r="142"
+              stroke="#E8A020" strokeWidth="7"
+              strokeDasharray="37 63" fill="none"
+            />
+            {Array.from({ length: 12 }).map((_, i) => {
+              const a = (i / 12) * Math.PI * 2;
+              return (
+                <line key={i}
+                  x1={+(250 + Math.cos(a) * 120).toFixed(1)}
+                  y1={+(250 + Math.sin(a) * 120).toFixed(1)}
+                  x2={+(250 + Math.cos(a) * 157).toFixed(1)}
+                  y2={+(250 + Math.sin(a) * 157).toFixed(1)}
+                  stroke="rgba(232,160,32,0.25)" strokeWidth="4"
+                />
+              );
+            })}
+          </motion.g>
+          <RingLabel
+            cx={250} cy={250} labelX={427} labelY={413}
+            label="INCUBATION" sublabel="BUILD & VALIDATE"
+            opacity={labelOp}
+            lineToX={250 + 142 * Math.cos(Math.PI * 0.32)}
+            lineToY={250 + 142 * Math.sin(Math.PI * 0.32)}
+          />
+        </motion.g>
+
+        <motion.g style={{ x: r3dx, y: r3dy }}>
+          <motion.g
+            style={{
+              rotate: ring3Rot,
+              transformOrigin: "250px 250px",
+              opacity: ringBaseOp,
+            }}
+          >
+            <circle cx="250" cy="250" r="97"
+              stroke="#7a3e00" strokeWidth="13" fill="none" opacity="0.5"
+            />
+            <motion.circle cx="250" cy="250" r="97"
+              stroke="#E8A020" strokeWidth="13" fill="none"
+              strokeDasharray="333 167"
+              strokeDashoffset={irisOff}
+              strokeLinecap="square"
+            />
+          </motion.g>
+          <RingLabel
+            cx={250} cy={250} labelX={410} labelY={113}
+            label="IDEATION" sublabel="SPARK THE IDEA"
+            opacity={labelOp}
+            lineToX={250 + 97 * Math.cos(Math.PI * -0.22)}
+            lineToY={250 + 97 * Math.sin(Math.PI * -0.22)}
+          />
+        </motion.g>
+
+        <motion.g
+          style={{
+            x: coreDx, y: coreDy,
+            scale: coreScale,
+            transformOrigin: "250px 250px",
+          }}
+        >
+          <motion.circle cx="250" cy="250" r="75"
+            fill="url(#ecell-plasma)"
+            style={{ opacity: coreOp }}
+            filter="url(#ecell-core-glow)"
+          />
+          <motion.circle cx="250" cy="250" r="30"
+            fill="#ffffff"
+            style={{ opacity: corePow }}
+            filter="url(#ecell-core-glow)"
+          />
+          <RingLabel
+            cx={250} cy={250}
+            labelX={430} labelY={250}
+            label="IGNITION" sublabel="THE SPARK"
+            opacity={labelOp}
+            lineToX={250 + 75 * Math.cos(Math.PI * 0.08)}
+            lineToY={250 + 75 * Math.sin(Math.PI * 0.08)}
+          />
+        </motion.g>
       </svg>
-    </div>
+    </motion.div>
   );
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SCROLL NUDGE — amber instead of cyan
-// ─────────────────────────────────────────────────────────────────────────────
 function ScrollNudge({ opacity }: { opacity: MotionValue<number> }) {
   return (
-    <motion.div style={{
-      position: "absolute", bottom: "2rem", left: 0, right: 0,
-      display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem",
-      opacity, zIndex: 20, pointerEvents: "none",
-    }}>
+    <motion.div
+      style={{
+        position: "absolute", bottom: "2.5rem", left: "4rem",
+        display: "flex", alignItems: "center", gap: "0.75rem",
+        opacity, zIndex: 20, pointerEvents: "none",
+      }}
+    >
       <motion.div
-        animate={{ scale: [1, 1.6, 1], opacity: [0.5, 0, 0.5] }}
-        transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
+        animate={{ y: [0, 5, 0] }}
+        transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
         style={{
-          position: "absolute", bottom: "0.5rem",
-          width: 48, height: 48, borderRadius: "50%",
-          // Amber ring instead of cyan
-          border: "1px solid rgba(232, 160, 32, 0.5)",
+          width: 30, height: 30,
+          border: "1px solid rgba(232,160,32,0.45)",
+          borderRadius: "50%",
+          display: "flex", alignItems: "center", justifyContent: "center",
         }}
-      />
-      <span style={{
-        fontFamily: "'DM Mono', 'JetBrains Mono', monospace",
-        fontSize: "0.6rem",
-        letterSpacing: "0.45em",
-        textTransform: "uppercase",
-        // Amber text instead of cyan
-        color: "rgba(232, 160, 32, 0.8)",
-        textShadow: "0 0 12px rgba(232, 160, 32, 0.5)",
-      }}>
-        Scroll to explore
-      </span>
-      <motion.div
-        animate={{ y: [0, 8, 0] }}
-        transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
       >
-        <ChevronsDown
-          size={24}
-          style={{ color: "#E8A020", filter: "drop-shadow(0 0 8px rgba(232,160,32,0.7))" }}
-        />
+        <ArrowDown size={13} style={{ color: "#E8A020" }} />
       </motion.div>
+      <span
+        style={{
+          fontFamily: "'DM Mono', monospace",
+          fontSize: "0.60rem", letterSpacing: "0.42em",
+          textTransform: "uppercase", color: "rgba(240,237,230,0.45)",
+        }}
+      >
+        scroll to explore
+      </span>
     </motion.div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MAIN — all logic identical to original; only style strings changed above
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 export default function ScrollIntro() {
-  const containerRef    = useRef<HTMLDivElement>(null);
-  const autoCtrlRef     = useRef<ReturnType<typeof animate> | null>(null);
-  const prevScrollRef   = useRef(0);
-  const handedOffRef    = useRef(false);
-  const doneRef         = useRef(hasPlayedIntro);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const autoCtrlRef  = useRef<ReturnType<typeof animate> | null>(null);
+  const prevScrollRef = useRef(0);
+  const doneRef      = useRef(hasPlayedIntro);
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [isMounted,   setIsMounted]   = useState(true);
-  const [isFadingOut, setIsFadingOut] = useState(false);
-  const [sc, setSc] = useState({ sys: false, ecell: false, sub: false });
+  const { setIntroActive } = useIntroControl();
+
+  // Initialize state based on whether the intro has already played
+  const [isMounted,   setIsMounted]   = useState(!hasPlayedIntro);
+  const [isFadingOut, setIsFadingOut] = useState(hasPlayedIntro);
+  const [sc, setSc] = useState({ tag: false, title: false, sub: false });
 
   useEffect(() => {
-    if (hasPlayedIntro) setIsMounted(false);
-  }, []);
+    // If returning from another page, ensure Navbar is visible immediately
+    if (hasPlayedIntro) {
+      setIntroActive(false);
+    } else {
+      setIntroActive(true);
+    }
+  }, [setIntroActive]);
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"],
   });
 
-  const scrollProg = useMotionValue<number>(0);
-  const autoProg   = useMotionValue<number>(0);
-  const progress   = useMotionValue<number>(0);
+  const scrollProg = useMotionValue(0);
+  const autoProg   = useMotionValue(0);
+  const progress   = useMotionValue(0);
 
   useEffect(() => {
     const sync = () => progress.set(Math.max(autoProg.get(), scrollProg.get()));
@@ -250,195 +438,375 @@ export default function ScrollIntro() {
     return () => { ua(); us(); };
   }, [autoProg, scrollProg, progress]);
 
-  const reset = useCallback(() => {
-    autoCtrlRef.current?.stop();
-    autoCtrlRef.current = null;
-    autoProg.set(0);
-    scrollProg.set(0);
-    progress.set(0);
-    handedOffRef.current = false;
-    setIsFadingOut(false);
-    setSc({ sys: false, ecell: false, sub: false });
-  }, [autoProg, scrollProg, progress]);
-
   const finish = useCallback(() => {
     if (doneRef.current) return;
     doneRef.current = true;
-    hasPlayedIntro  = true;
+    hasPlayedIntro = true;
     setIsFadingOut(true);
     window.scrollTo({ top: 0, behavior: "instant" });
-    setTimeout(() => setIsMounted(false), 50);
-  }, []);
+    setIntroActive(false);
+    setTimeout(() => setIsMounted(false), 55);
+  }, [setIntroActive]);
 
-  const startAuto = useCallback(() => {
-    if (!isMounted || doneRef.current) return;
-    autoCtrlRef.current?.stop();
+  const resumeAuto = useCallback((from: number) => {
+    if (doneRef.current || autoCtrlRef.current) return;
+    const remaining = 1 - from;
+    if (remaining <= 0) { finish(); return; }
+    autoProg.set(from);
     autoCtrlRef.current = animate(autoProg, 1, {
-      duration: 8,
-      ease: [0.42, 0, 0.48, 1],
+      duration: 18 * remaining,
+      ease: "linear",
       onComplete: finish,
     });
-  }, [autoProg, finish, isMounted]);
+  }, [autoProg, finish]);
+
+  const startAuto = useCallback(() => {
+    if (doneRef.current) return;
+    autoCtrlRef.current?.stop();
+    autoCtrlRef.current = animate(autoProg, 1, {
+      duration: 18,
+      ease: "linear",
+      onComplete: finish,
+    });
+  }, [autoProg, finish]);
 
   useEffect(() => {
     if (!isMounted || doneRef.current) return;
-    const t = setTimeout(() => startAuto(), 300);
+    const t = setTimeout(() => startAuto(), 150);
     return () => clearTimeout(t);
   }, [startAuto, isMounted]);
 
-  useMotionValueEvent(scrollYProgress, "change", (v: number) => {
+  useMotionValueEvent(scrollYProgress, "change", (v) => {
     if (!isMounted || doneRef.current) return;
 
     const prev    = prevScrollRef.current;
     const goingUp = v < prev - 0.001;
     prevScrollRef.current = v;
 
+    if (idleTimerRef.current) {
+      clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = null;
+    }
+
     if (goingUp) {
-      if (autoCtrlRef.current && !handedOffRef.current) {
-        handedOffRef.current = true;
-        autoCtrlRef.current.stop();
-        autoCtrlRef.current = null;
+      autoCtrlRef.current?.stop();
+      autoCtrlRef.current = null;
+
+      if (v < 0.02) {
         autoProg.set(0);
-      }
-      if (v < 0.03) {
-        reset();
-        setTimeout(() => startAuto(), 400);
+        scrollProg.set(0);
+        progress.set(0);
+        setSc({ tag: false, title: false, sub: false });
+        setIsFadingOut(false);
+        setTimeout(() => startAuto(), 150);
         return;
       }
+      scrollProg.set(v);
+      return;
     }
 
-    if (!goingUp && handedOffRef.current && !autoCtrlRef.current && v > 0.03) {
-      handedOffRef.current = false;
-      autoProg.set(v);
-      autoCtrlRef.current = animate(autoProg, 1, {
-        duration: 8 * (1 - v),
-        ease: "linear",
-        onComplete: finish,
-      });
+    if (autoCtrlRef.current) {
+      autoCtrlRef.current.stop();
+      autoCtrlRef.current = null;
+      autoProg.set(0);
     }
 
-    if (v >= 0.99) finish();
     scrollProg.set(v);
+
+    if (v >= 0.99) { finish(); return; }
+
+    idleTimerRef.current = setTimeout(() => {
+      idleTimerRef.current = null;
+      if (!doneRef.current && !autoCtrlRef.current) {
+        resumeAuto(progress.get());
+      }
+    }, 1200);
   });
 
-  // Derived transforms (unchanged)
-  const textY        = useTransform(progress, [0.22, 0.40], [80, 0]);
-  const textOpacity  = useTransform(progress, [0.22, 0.36, 0.80, 0.92], [0, 1, 1, 0]);
-  const textScale    = useTransform(progress, [0.80, 0.93], [1, 2]);
-  const subOpacity   = useTransform(progress, [0.34, 0.46, 0.78, 0.91], [0, 1, 1, 0]);
-  const subY         = useTransform(progress, [0.34, 0.46], [20, 0]);
-  const reactorScale = useTransform(progress, [0.74, 0.95], [1, 4]);
-  const scanOpacity  = useTransform(progress, [0.20, 0.25, 0.82, 0.87], [0, 1, 1, 0]);
-  const nudgeOpacity = useTransform(progress, [0, 0.04, 0.18], [1, 1, 0]);
+  // NOTE: HALVED all output values here because container size is doubled
+  const reactorScale = useTransform(
+    progress,
+    [0,      0.04,    0.10,    0.22,    0.34,    0.55,    0.80,    0.93,    0.97],
+    [0.5,    0.53,    0.61,    0.76,    0.89,    0.95,    0.865,   0.755,   0.265]
+  );
 
-  useMotionValueEvent(progress, "change", (v: number) => {
-    setSc(prev => {
-      const next = { sys: v > 0.22, ecell: v > 0.25, sub: v > 0.34 };
-      if (prev.sys === next.sys && prev.ecell === next.ecell && prev.sub === next.sub) return prev;
-      return next;
+  const reactorRotY = useTransform(
+    progress,
+    [0,   0.10,  0.24,  0.40,  0.58,  0.72,  0.90, 1.0],
+    [0,    0,    -9,   -42,   -12,    5,     1,    0]
+  );
+  const reactorRotX = useTransform(
+    progress,
+    [0,   0.10,  0.24,  0.40,  0.58,  0.72,  0.90, 1.0],
+    [0,    0,    14,    28,     4,    -4,     1,    0]
+  );
+  const reactorRotZ = useTransform(
+    progress,
+    [0,  0.22,  0.42,  0.68,  0.90],
+    [0,   0,   -10,    0,     0]
+  );
+
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      const { innerWidth: W, innerHeight: H } = window;
+      mouseX.set(((e.clientX - W / 2) / (W / 2)) * 8);
+      mouseY.set((-(e.clientY - H / 2) / (H / 2)) * 8);
+    };
+    window.addEventListener("mousemove", onMove);
+    return () => window.removeEventListener("mousemove", onMove);
+  }, [mouseX, mouseY]);
+
+  const mouseWeight = useTransform(progress, [0, 0.16], [1, 0]);
+  const tiltY = useTransform(
+    [reactorRotY, mouseX, mouseWeight] as MotionValue[],
+    ([ry, mx, w]) => (ry as number) + (mx as number) * (w as number)
+  );
+  const tiltX = useTransform(
+    [reactorRotX, mouseY, mouseWeight] as MotionValue[],
+    ([rx, my, w]) => (rx as number) + (my as number) * (w as number)
+  );
+
+  const dismantle = useTransform(
+    progress,
+    [0.62, 0.74, 0.80, 0.90],
+    [0,    1,    1,    0]
+  );
+
+  const reactorTX = useTransform(
+    progress,
+    [0,      0.10,   0.36,   0.65,   0.90],
+    ["-50%", "-50%", "-34%", "-44%", "-50%"]
+  );
+
+  const tagOpacity   = useTransform(progress, [0.03, 0.10, 0.78, 0.88], [0, 1, 1, 0]);
+  const tagY         = useTransform(progress, [0.03, 0.10], [10, 0]);
+  const titleOpacity = useTransform(progress, [0.06, 0.16, 0.76, 0.86], [0, 1, 1, 0]);
+  const titleY       = useTransform(progress, [0.06, 0.16], [24, 0]);
+  const subOpacity   = useTransform(progress, [0.12, 0.22, 0.74, 0.84], [0, 1, 1, 0]);
+  const subY         = useTransform(progress, [0.12, 0.22], [14, 0]);
+
+  const dismantleHeadOp = useTransform(progress, [0.63, 0.72, 0.78, 0.88], [0, 1, 1, 0]);
+  const dismantleHeadY  = useTransform(progress, [0.63, 0.72], [16, 0]);
+
+  const scanOp  = useTransform(progress, [0.06, 0.14, 0.88, 0.94], [0, 1, 1, 0]);
+  const nudgeOp = useTransform(progress, [0, 0.05, 0.18], [1, 1, 0]);
+
+  useMotionValueEvent(progress, "change", (v) => {
+    setSc((prev) => {
+      const n = { tag: v > 0.03, title: v > 0.06, sub: v > 0.12 };
+      if (prev.tag === n.tag && prev.title === n.title && prev.sub === n.sub) return prev;
+      return n;
     });
   });
 
-  if (!isMounted) {
-    return <div ref={containerRef} style={{ display: "none" }} aria-hidden="true" />;
-  }
+  if (!isMounted) return <div ref={containerRef} style={{ display: "none" }} aria-hidden="true" />;
 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,200;0,900;1,200&family=DM+Mono:wght@300;400&display=swap');
-        @keyframes scan {
-          0%   { top:-2px; opacity:0 }
-          5%   { opacity:.5 }
-          95%  { opacity:.5 }
-          100% { top:100vh; opacity:0 }
+        @keyframes ecell-scan {
+          0%   { top: -2px; opacity: 0; }
+          4%   { opacity: 0.5; }
+          96%  { opacity: 0.5; }
+          100% { top: 100vh; opacity: 0; }
         }
-        .scanline {
-          position:absolute; left:0; right:0; height:2px;
-          pointer-events:none; z-index:10;
-          /* Amber scan line instead of cyan */
-          background:linear-gradient(90deg,transparent,rgba(232,160,32,0.35),transparent);
-          animation:scan 4s ease-in-out infinite;
+        @keyframes amber-pulse {
+          0%, 100% { opacity: 1; }
+          50%       { opacity: 0.4; }
+        }
+        .ecell-scanline {
+          position: absolute; left: 0; right: 0; height: 1.5px;
+          pointer-events: none; z-index: 15;
+          background: linear-gradient(
+            90deg,
+            transparent 0%,
+            rgba(232,160,32,0.45) 25%,
+            rgba(232,160,32,0.75) 50%,
+            rgba(232,160,32,0.45) 75%,
+            transparent 100%
+          );
+          animation: ecell-scan 3.5s ease-in-out infinite;
+          will-change: top;
         }
       `}</style>
 
-      <div ref={containerRef} style={{ height: isFadingOut ? 0 : "400vh", position: "relative", zIndex: 50 }}>
-        <motion.div style={{
-          position: isFadingOut ? "fixed" : "sticky",
-          top: 0, left: 0, right: 0,
-          height: "100vh", width: "100%",
-          overflow: "hidden", background: "#050508",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          opacity: isFadingOut ? 0 : 1,
-          pointerEvents: isFadingOut ? "none" : "auto",
-          transition: isFadingOut ? "opacity 0.05s ease-out" : "none",
-          willChange: "opacity, transform",
-        }}>
+      <div
+        ref={containerRef}
+        style={{ height: isFadingOut ? 0 : "900vh", position: "relative", zIndex: 95 }}
+      >
+        <motion.div
+          style={{
+            position: isFadingOut ? "fixed" : "sticky",
+            top: 0, left: 0, right: 0,
+            height: "100vh", width: "100%",
+            overflow: "hidden",
+            background: "#0c0b09",
+            opacity: isFadingOut ? 0 : 1,
+            pointerEvents: isFadingOut ? "none" : "auto",
+            transition: isFadingOut ? "opacity 0.05s ease-out" : "none",
+            perspective: 1200,
+          }}
+        >
+          {/* Film grain */}
+          <div
+            aria-hidden
+            style={{
+              position: "absolute", inset: 0, pointerEvents: "none", zIndex: 1,
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.030'/%3E%3C/svg%3E")`,
+              backgroundSize: "256px 256px",
+            }}
+          />
 
-          <motion.div className="scanline" style={{ opacity: scanOpacity }} aria-hidden />
+          {/* Vignette */}
+          <div
+            aria-hidden
+            style={{
+              position: "absolute", inset: 0, pointerEvents: "none", zIndex: 2,
+              background: "radial-gradient(ellipse at 50% 50%, transparent 22%, rgba(0,0,0,0.58) 100%)",
+            }}
+          />
 
-          <div style={{
-            position: "absolute", inset: 0, pointerEvents: "none", zIndex: 1,
-            background: "radial-gradient(ellipse at 50% 42%, transparent 10%, #050508 80%)",
-          }} aria-hidden />
+          <motion.div className="ecell-scanline" style={{ opacity: scanOp }} aria-hidden />
 
-          <motion.div style={{
-            position: "absolute", zIndex: 3,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            scale: reactorScale, willChange: "transform",
-          }}>
-            <ArcReactor progress={progress} />
+          {/* ── Reactor container ── */}
+          <motion.div
+            style={{
+              position: "absolute",
+              left: "50%",
+              top: "50%",
+              translateX: reactorTX,
+              translateY: "-50%",
+              rotateZ: reactorRotZ,
+              scale: reactorScale,
+              // NOTE: Doubled these values so it renders high-res natively
+              width: "90vmin",  
+              height: "90vmin", 
+              zIndex: 3,
+              transformStyle: "preserve-3d",
+            }}
+          >
+            <Reactor
+              progress={progress}
+              tiltX={tiltX}
+              tiltY={tiltY}
+              dismantle={dismantle}
+            />
           </motion.div>
 
-          <motion.div style={{
-            position: "absolute", zIndex: 4, pointerEvents: "none",
-            y: textY, opacity: textOpacity, scale: textScale,
-            display: "flex", flexDirection: "column", alignItems: "center",
-          }}>
-            {/* System label — amber instead of cyan */}
-            <ScrambleText
-              text="VENTURE.CORE // BOOTSTRAP SEQUENCE"
-              active={sc.sys} speed={30} stagger={50}
-              style={{
-                fontFamily: "'DM Mono', monospace", fontWeight: 300,
-                fontSize: "clamp(0.5rem,1.4vw,0.72rem)", letterSpacing: "0.55em",
-                color: "rgba(232, 160, 32, 0.65)", textTransform: "uppercase",
-                marginBottom: "2.2rem", height: "1rem",
-              }}
-            />
-
-            {/* Main wordmark — keep the purple→amber gradient for drama */}
-            <ScrambleText
-              text="E-CELL"
-              active={sc.ecell} speed={42} stagger={90}
-              style={{
-                fontFamily: "'Exo 2',sans-serif", fontWeight: 900,
-                fontSize: "clamp(5.5rem,18vw,14rem)", lineHeight: 1,
-                letterSpacing: "-0.02em",
-                // Amber-to-white gradient — warm, not cyan
-                background: "linear-gradient(158deg,#ffffff 0%,#ffd97a 42%,#E8A020 100%)",
-                WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-                filter: "drop-shadow(0 0 30px rgba(232,160,32,0.35))",
-                userSelect: "none", textAlign: "center", minHeight: "14rem",
-              }}
-            />
-
-            <motion.div style={{ y: subY, opacity: subOpacity, marginTop: "1.6rem" }}>
+          {/* ── Left text block ── */}
+          <div
+            style={{
+              position: "absolute",
+              left: "clamp(2rem, 4vw, 4.5rem)",
+              top: "50%",
+              transform: "translateY(-50%)",
+              zIndex: 5, pointerEvents: "none",
+              display: "flex", flexDirection: "column",
+              maxWidth: "min(400px, 38vw)",
+            }}
+          >
+            <motion.div style={{ y: tagY, opacity: tagOpacity, marginBottom: "1.5rem" }}>
               <ScrambleText
-                text="IISER  BHOPAL"
-                active={sc.sub} speed={36} stagger={60}
+                text="VENTURE.CORE // BOOTSTRAP"
+                active={sc.tag} speed={28} stagger={42}
                 style={{
-                  fontFamily: "'Exo 2',sans-serif", fontWeight: 200, fontStyle: "italic",
-                  fontSize: "clamp(0.9rem,3.2vw,1.9rem)", letterSpacing: "0.30em",
-                  color: "rgba(255,255,255,0.55)", height: "2rem", textAlign: "center",
+                  fontFamily: "'DM Mono', monospace", fontWeight: 400,
+                  fontSize: "clamp(0.52rem, 1vw, 0.68rem)",
+                  letterSpacing: "0.5em", color: "#E8A020",
+                  textTransform: "uppercase",
                 }}
               />
             </motion.div>
+
+            <motion.div style={{ y: titleY, opacity: titleOpacity }}>
+              <ScrambleText
+                text="E-CELL"
+                active={sc.title} speed={45} stagger={100}
+                style={{
+                  fontFamily: "'Bebas Neue', sans-serif", fontWeight: 900,
+                  fontSize: "clamp(5rem, 14vw, 11rem)",
+                  lineHeight: 0.88, letterSpacing: "0.02em",
+                  background: "linear-gradient(155deg,#ffffff 0%,#ffd97a 40%,#E8A020 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                  filter: "drop-shadow(0 0 24px rgba(232,160,32,0.3))",
+                  userSelect: "none",
+                  minHeight: "8rem",
+                }}
+              />
+            </motion.div>
+
+            <motion.div style={{ y: subY, opacity: subOpacity, marginTop: "1.5rem" }}>
+              <ScrambleText
+                text="IISER  BHOPAL"
+                active={sc.sub} speed={32} stagger={55}
+                style={{
+                  fontFamily: "'DM Mono', monospace", fontWeight: 400,
+                  fontSize: "clamp(0.85rem, 2.2vw, 1.4rem)",
+                  letterSpacing: "0.42em",
+                  color: "rgba(240,237,230,0.5)",
+                  height: "1.8rem",
+                }}
+              />
+            </motion.div>
+          </div>
+
+          {/* ── Dismantle heading ── */}
+          <motion.div
+            style={{
+              position: "absolute",
+              bottom: "3.5rem", left: "clamp(2rem, 4vw, 4.5rem)",
+              opacity: dismantleHeadOp, y: dismantleHeadY,
+              zIndex: 6, pointerEvents: "none",
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "'DM Mono', monospace",
+                fontSize: "clamp(0.55rem, 1vw, 0.68rem)",
+                letterSpacing: "0.48em", textTransform: "uppercase",
+                color: "rgba(232,160,32,0.7)",
+                borderTop: "1px solid rgba(232,160,32,0.2)",
+                paddingTop: "0.6rem", marginBottom: "0.4rem",
+              }}
+            >
+              The anatomy of a startup
+            </div>
+            <div
+              style={{
+                fontFamily: "'DM Mono', monospace",
+                fontSize: "clamp(0.48rem, 0.85vw, 0.60rem)",
+                letterSpacing: "0.28em", textTransform: "uppercase",
+                color: "rgba(240,237,230,0.28)",
+              }}
+            >
+              Four forces. One mission.
+            </div>
           </motion.div>
 
-          <ScrollNudge opacity={nudgeOpacity} />
+          {/* ── Coordinates ── */}
+          <motion.div
+            style={{
+              position: "absolute", bottom: "2.5rem", right: "2.5rem",
+              opacity: tagOpacity, zIndex: 6, pointerEvents: "none",
+              textAlign: "right",
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "'DM Mono', monospace", fontSize: "0.57rem",
+                letterSpacing: "0.28em", lineHeight: 1.9, color: "#E8A020",
+              }}
+            >
+              <div>23°16′N 77°26′E</div>
+              <div style={{ opacity: 0.38, color: "#f0ede6" }}>IISER BHOPAL</div>
+            </div>
+          </motion.div>
 
+          <ScrollNudge opacity={nudgeOp} />
         </motion.div>
       </div>
     </>

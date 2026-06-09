@@ -2,8 +2,7 @@
 // components/sections/BentoGrid.tsx
 // ─────────────────────────────────────────────────────────────────────────────
 // Editorial Brutalism — E-Cell Pillars section.
-// Cards are magazine-style tiles: large index number, ruled border, sparse text.
-// No glass. No gradient blobs. No rainbow icon colors.
+// FIXED: High contrast grid lines, vivid hover states, hardcoded fonts/colors.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { motion, useReducedMotion } from "framer-motion";
@@ -12,25 +11,23 @@ import { ArrowUpRight } from "lucide-react";
 import { siteConfig } from "@/config/site";
 
 // ── Status badge variants ─────────────────────────────────────────────────────
-// We map the comingSoon string to a display label and style.
-// Everything uses a single amber accent or pure white — no per-card color.
 function StatusBadge({ text }: { text: string }) {
   const isLive = /live|active|open/i.test(text);
   return (
     <span
       className="inline-flex items-center gap-2"
       style={{
-        fontFamily: "var(--font-mono)",
-        fontSize: "0.6rem",
+        fontFamily: "'DM Mono', monospace",
+        fontSize: "0.65rem",
         letterSpacing: "0.14em",
         textTransform: "uppercase",
-        color: isLive ? "var(--color-amber)" : "rgba(240,237,230,0.28)",
+        color: isLive ? "#e8a020" : "rgba(255,255,255,0.4)",
       }}
     >
       <span
         className="w-1.5 h-1.5 rounded-full"
         style={{
-          background: isLive ? "var(--color-amber)" : "rgba(240,237,230,0.2)",
+          background: isLive ? "#e8a020" : "rgba(255,255,255,0.2)",
           animation: isLive ? "amber-pulse 1.8s ease-in-out infinite" : undefined,
         }}
       />
@@ -65,33 +62,30 @@ function PillarCard({ title, description, comingSoon, size, index }: PillarCardP
       className={isLarge ? "md:col-span-2" : ""}
     >
       <div
-        className="group relative h-full flex flex-col justify-between p-7 md:p-8 transition-all duration-400 cursor-default"
+        className="group relative h-full flex flex-col justify-between p-7 md:p-10 transition-all duration-300 cursor-default"
         style={{
-          border: "1px solid rgba(255,255,255,0.07)",
-          background: "rgba(255,255,255,0.015)",
-          minHeight: isLarge ? "260px" : "220px",
+          background: "rgba(12,11,9,0.95)", // Solid dark background for the card
+          minHeight: isLarge ? "280px" : "240px",
         }}
         onMouseEnter={(e) => {
-          (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(232, 160, 32, 0.25)";
-          (e.currentTarget as HTMLDivElement).style.background = "rgba(232, 160, 32, 0.03)";
+          (e.currentTarget as HTMLDivElement).style.background = "rgba(232, 160, 32, 0.04)";
         }}
         onMouseLeave={(e) => {
-          (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.07)";
-          (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.015)";
+          (e.currentTarget as HTMLDivElement).style.background = "rgba(12,11,9,0.95)";
         }}
       >
         {/* Top row: index + status */}
         <div className="flex items-start justify-between mb-6">
           <span
             style={{
-              fontFamily: "var(--font-display)",
-              fontSize: "3.5rem",
+              fontFamily: "'Bebas Neue', sans-serif",
+              fontSize: "4rem",
               lineHeight: 1,
-              color: "rgba(232, 160, 32, 0.18)",
+              color: "rgba(232, 160, 32, 0.3)", // Much brighter resting state
               letterSpacing: "0.02em",
               transition: "color 0.3s ease",
             }}
-            className="group-hover:!text-[rgba(232,160,32,0.35)]"
+            className="group-hover:!text-[#e8a020]" // Illuminates fully on hover
           >
             {displayIndex}
           </span>
@@ -101,27 +95,27 @@ function PillarCard({ title, description, comingSoon, size, index }: PillarCardP
         {/* Title */}
         <div className="flex-1 flex flex-col justify-end">
           <div
-            className="w-8 h-px mb-5 transition-all duration-300 group-hover:w-14"
-            style={{ background: "var(--color-amber)", opacity: 0.5 }}
+            className="w-8 h-[2px] mb-6 transition-all duration-300 group-hover:w-16"
+            style={{ background: "#e8a020", opacity: 0.8 }}
           />
           <h3
             style={{
-              fontFamily: "var(--font-display)",
-              fontSize: isLarge ? "1.9rem" : "1.5rem",
+              fontFamily: "'Bebas Neue', sans-serif",
+              fontSize: isLarge ? "2.2rem" : "1.8rem",
               lineHeight: 1.05,
               letterSpacing: "0.02em",
-              color: "rgba(240,237,230,0.85)",
+              color: "#ffffff",
             }}
-            className="mb-3 uppercase"
+            className="mb-4 uppercase"
           >
             {title}
           </h3>
           <p
             style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: "0.78rem",
+              fontFamily: "'DM Mono', monospace",
+              fontSize: "0.85rem",
               lineHeight: 1.65,
-              color: "rgba(240,237,230,0.35)",
+              color: "rgba(255,255,255,0.6)", // Highly readable description
             }}
           >
             {description}
@@ -155,26 +149,27 @@ export default function BentoGrid() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="mb-16 border-b border-white/[0.07] pb-10"
+          className="mb-16 border-b pb-10"
+          style={{ borderColor: "rgba(255,255,255,0.15)" }}
         >
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
             {/* Left: label + headline */}
             <div className="flex-1 max-w-2xl">
               <span
-                style={{ fontFamily: "var(--font-mono)", fontSize: "0.6rem", letterSpacing: "0.18em" }}
-                className="inline-flex items-center gap-3 text-white/30 uppercase mb-5"
+                style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.65rem", letterSpacing: "0.18em", color: "rgba(255,255,255,0.6)" }}
+                className="inline-flex items-center gap-3 uppercase mb-5"
               >
-                <span className="w-5 h-px" style={{ background: "var(--color-amber)", opacity: 0.7 }} />
+                <span className="w-5 h-px" style={{ background: "#e8a020", opacity: 0.9 }} />
                 {sectionLabel}
               </span>
 
               <h2
                 style={{
-                  fontFamily: "var(--font-display)",
-                  fontSize: "clamp(3rem, 7vw, 5.5rem)",
+                  fontFamily: "'Bebas Neue', sans-serif",
+                  fontSize: "clamp(3.5rem, 7vw, 5.5rem)",
                   lineHeight: 0.95,
-                  letterSpacing: "0.01em",
-                  color: "rgba(240,237,230,0.9)",
+                  letterSpacing: "0.02em",
+                  color: "#ffffff",
                 }}
                 className="uppercase"
               >
@@ -185,11 +180,11 @@ export default function BentoGrid() {
             {/* Right: description */}
             <p
               style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: "0.78rem",
+                fontFamily: "'DM Mono', monospace",
+                fontSize: "0.85rem",
                 lineHeight: 1.7,
-                color: "rgba(240,237,230,0.35)",
-                maxWidth: "340px",
+                color: "rgba(255,255,255,0.6)",
+                maxWidth: "380px",
               }}
               className="md:text-right"
             >
@@ -199,7 +194,8 @@ export default function BentoGrid() {
         </motion.div>
 
         {/* ── Pillar Grid ── */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-[1px] bg-white/[0.07]">
+        {/* FIX: bg-white/[0.15] makes the gap lines sharply visible */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-[1px] bg-white/[0.15] border border-white/[0.15]">
           {items.map((item, i) => (
             <PillarCard key={item.id} {...item} index={i} />
           ))}
@@ -211,19 +207,19 @@ export default function BentoGrid() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.55, delay: 0.3 }}
-          className="mt-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 px-8 py-7"
-          style={{ border: "1px solid rgba(255,255,255,0.07)", borderTop: "none" }}
+          className="mt-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 px-8 py-8"
+          style={{ border: "1px solid rgba(255,255,255,0.15)", borderTop: "none" }}
         >
           <div>
             <p
-              style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem", letterSpacing: "0.04em" }}
-              className="text-white/75 uppercase mb-1"
+              style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "1.5rem", letterSpacing: "0.04em", color: "#ffffff" }}
+              className="uppercase mb-1"
             >
               Want to shape what we build?
             </p>
             <p
-              style={{ fontFamily: "var(--font-mono)", fontSize: "0.7rem", letterSpacing: "0.08em" }}
-              className="text-white/30 uppercase"
+              style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.75rem", letterSpacing: "0.08em", color: "rgba(255,255,255,0.5)" }}
+              className="uppercase"
             >
               Members get early access to every program.
             </p>
@@ -234,23 +230,24 @@ export default function BentoGrid() {
               whileTap={{ scale: 0.97 }}
               className="group shrink-0 inline-flex items-center gap-2.5 px-6 py-3 transition-all duration-200"
               style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: "0.72rem",
+                fontFamily: "'DM Mono', monospace",
+                fontSize: "0.75rem",
                 letterSpacing: "0.1em",
-                border: "1px solid var(--color-amber)",
-                color: "var(--color-amber)",
+                border: "1px solid #e8a020",
+                color: "#e8a020",
+                fontWeight: 600,
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = "var(--color-amber)";
+                (e.currentTarget as HTMLButtonElement).style.background = "#e8a020";
                 (e.currentTarget as HTMLButtonElement).style.color = "#0c0b09";
               }}
               onMouseLeave={(e) => {
                 (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-                (e.currentTarget as HTMLButtonElement).style.color = "var(--color-amber)";
+                (e.currentTarget as HTMLButtonElement).style.color = "#e8a020";
               }}
             >
               JOIN AS A MEMBER
-              <ArrowUpRight size={13} />
+              <ArrowUpRight size={14} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </motion.button>
           </Link>
         </motion.div>

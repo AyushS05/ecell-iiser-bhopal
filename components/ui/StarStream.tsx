@@ -2,7 +2,7 @@
 // components/StarStream.tsx
 // ─────────────────────────────────────────────────────────────────────────────
 // Ambient particle field — recolored to amber/gold palette.
-// Particles: warm amber. Mouse lines: pale chalk. Connection lines: amber dim.
+// Opacity fixed to 100%. Line calculation fixed for visible, glowing connections.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useRef } from "react";
@@ -55,7 +55,7 @@ export default function StarStream() {
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
         // Amber particle — larger ones are brighter
-        const alpha = this.size > 1.2 ? 0.75 : 0.45;
+        const alpha = this.size > 1.2 ? 0.85 : 0.5;
         ctx.fillStyle = `rgba(232, 160, 32, ${alpha})`;
         ctx.fill();
       }
@@ -63,9 +63,10 @@ export default function StarStream() {
 
     const initParticles = () => {
       particles = [];
+      // Slightly bumped max particle count for better density
       const count = Math.min(
-        Math.floor((canvas.width * canvas.height) / 12000),
-        55
+        Math.floor((canvas.width * canvas.height) / 10000),
+        80
       );
       for (let i = 0; i < count; i++) particles.push(new Particle());
     };
@@ -92,37 +93,42 @@ export default function StarStream() {
         particles[i].update();
         particles[i].draw();
 
-        // Particle–particle connection lines — amber, very faint
+        // Particle–particle connection lines
         for (let j = i + 1; j < particles.length; j++) {
           const dx = particles[i].x - particles[j].x;
           const dy = particles[i].y - particles[j].y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 90) {
+          
+          if (dist < 100) {
             ctx.beginPath();
-            ctx.strokeStyle = `rgba(232, 160, 32, ${0.12 - dist / 900})`;
-            ctx.lineWidth = 0.5;
+            // Fixed Math: smoothly fades out as distance approaches 100
+            const lineAlpha = (1 - dist / 100) * 0.25; 
+            ctx.strokeStyle = `rgba(232, 160, 32, ${lineAlpha})`;
+            ctx.lineWidth = 0.8;
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
             ctx.stroke();
           }
         }
 
-        // Mouse repulsion + connection line — chalk/warm white
+        // Mouse repulsion + connection line
         const dxM = particles[i].x - mouse.x;
         const dyM = particles[i].y - mouse.y;
         const distM = Math.sqrt(dxM * dxM + dyM * dyM);
-        if (distM < 120) {
+        
+        if (distM < 150) {
           ctx.beginPath();
-          // Warm white line toward cursor — subtle, not colored
-          ctx.strokeStyle = `rgba(240, 237, 230, ${0.18 - distM / 800})`;
-          ctx.lineWidth = 0.8;
+          // Fixed Math: smoothly fades out as distance approaches 150
+          const mouseAlpha = (1 - distM / 150) * 0.35;
+          ctx.strokeStyle = `rgba(240, 237, 230, ${mouseAlpha})`;
+          ctx.lineWidth = 1;
           ctx.moveTo(particles[i].x, particles[i].y);
           ctx.lineTo(mouse.x, mouse.y);
           ctx.stroke();
 
           // Gentle repulsion
-          particles[i].x -= dxM * 0.012;
-          particles[i].y -= dyM * 0.012;
+          particles[i].x -= dxM * 0.015;
+          particles[i].y -= dyM * 0.015;
         }
       }
 
@@ -143,8 +149,9 @@ export default function StarStream() {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-0"
-      style={{ opacity: 0.55, transform: "translateZ(0)", willChange: "transform" }}
+      // Added opacity-100 and mix-blend-screen for vibrant overlay
+      className="fixed inset-0 pointer-events-none z-0 opacity-100 mix-blend-screen"
+      style={{ transform: "translateZ(0)", willChange: "transform" }}
       aria-hidden="true"
     />
   );

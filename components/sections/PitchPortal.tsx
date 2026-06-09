@@ -2,8 +2,7 @@
 // components/sections/PitchPortal.tsx
 // ─────────────────────────────────────────────────────────────────────────────
 // Editorial Brutalism — pitch submission form.
-// Amber accent throughout. No cyan/violet. Ruled borders, DM Mono.
-// Logic identical to original; only colors and styling updated.
+// FIXED: Explicit hex colors, hardcoded fonts, high-contrast inputs.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { motion, AnimatePresence, Variants } from "framer-motion";
@@ -21,7 +20,7 @@ import { siteConfig } from "@/config/site";
 
 // ── Step Definitions ──────────────────────────────────────────────────────────
 const STEPS = [
-  { id: 1, title: "Who are you?",   subtitle: "Let's start with the founder.",          fields: ["name", "email"]          as const },
+  { id: 1, title: "Who are you?",   subtitle: "Let's start with the founder.",      fields: ["name", "email"]          as const },
   { id: 2, title: "The Big Idea",   subtitle: "Name your venture and its current stage.", fields: ["ideaName", "stage"]       as const },
   { id: 3, title: "The Problem",    subtitle: "What pain are you solving? Be specific.",  fields: ["problem"]                 as const },
 ] as const;
@@ -33,16 +32,16 @@ const slideVariants: Variants = {
   exit:   (d: number) => ({ x: d < 0 ? 60 : -60, opacity: 0, filter: "blur(4px)", transition: { duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] } }),
 };
 
-// ── Input base style — amber focus instead of cyan ────────────────────────────
+// ── Input base style — guaranteed high contrast ───────────────────────────────
 const inputBase =
-  "w-full border px-4 py-3.5 text-sm placeholder:text-white/20 outline-none transition-all duration-300 " +
-  "hover:border-white/20 aria-[invalid=true]:border-rose-500/50";
+  "w-full border px-4 py-3.5 text-base text-white placeholder:text-white/30 outline-none transition-all duration-300 " +
+  "hover:border-white/30 aria-[invalid=true]:border-rose-500/50";
 
 const inputStyle: React.CSSProperties = {
-  fontFamily: "var(--font-mono)",
-  background: "rgba(255,255,255,0.025)",
-  borderColor: "rgba(255,255,255,0.1)",
-  color: "#f0ede6",
+  fontFamily: "'DM Mono', monospace",
+  background: "rgba(255,255,255,0.04)",
+  borderColor: "rgba(255,255,255,0.15)",
+  color: "#ffffff", // Bulletproof explicit white text
   borderRadius: 0,
 };
 
@@ -55,9 +54,9 @@ function FieldWrapper({ label, error, children, hint }: FieldWrapperProps) {
     <div className="flex flex-col gap-2">
       <label
         style={{
-          fontFamily: "var(--font-mono)", fontSize: "0.6rem",
+          fontFamily: "'DM Mono', monospace", fontSize: "0.65rem",
           letterSpacing: "0.16em", textTransform: "uppercase",
-          color: "rgba(240,237,230,0.4)",
+          color: "rgba(255,255,255,0.6)", // Brighter label
         }}
       >
         {label}
@@ -72,13 +71,13 @@ function FieldWrapper({ label, error, children, hint }: FieldWrapperProps) {
             exit={{ opacity: 0, y: -4, height: 0 }}
             transition={{ duration: 0.2 }}
             className="flex items-center gap-1.5 text-rose-400"
-            style={{ fontFamily: "var(--font-mono)", fontSize: "0.68rem" }}
+            style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.68rem" }}
           >
             <AlertTriangle size={11} />{error}
           </motion.p>
         ) : hint ? (
           <motion.p key="hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            style={{ fontFamily: "var(--font-mono)", fontSize: "0.65rem", color: "rgba(240,237,230,0.25)" }}
+            style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.65rem", color: "rgba(255,255,255,0.4)" }}
           >
             {hint}
           </motion.p>
@@ -94,7 +93,7 @@ function StageSelector({ value, onChange, error }: StageSelectorProps) {
   const { stages } = (siteConfig as any).pitchPortal;
   return (
     <FieldWrapper label="Current Stage" error={error}>
-      <div className="grid grid-cols-2 gap-[1px]" style={{ background: "rgba(255,255,255,0.07)" }}>
+      <div className="grid grid-cols-2 gap-[1px]" style={{ background: "rgba(255,255,255,0.1)" }}>
         {stages.map((stage: { value: string; label: string }) => (
           <button
             key={stage.value}
@@ -102,12 +101,12 @@ function StageSelector({ value, onChange, error }: StageSelectorProps) {
             onClick={() => onChange(stage.value)}
             className="relative px-4 py-3 text-left transition-all duration-200"
             style={{
-              fontFamily: "var(--font-mono)",
+              fontFamily: "'DM Mono', monospace",
               fontSize: "0.72rem",
               letterSpacing: "0.04em",
-              background: value === stage.value ? "var(--color-amber-dim)" : "var(--color-surface)",
-              color: value === stage.value ? "var(--color-amber)" : "rgba(240,237,230,0.4)",
-              borderLeft: value === stage.value ? "2px solid var(--color-amber)" : "2px solid transparent",
+              background: value === stage.value ? "rgba(232,160,32,0.1)" : "rgba(12,11,9,0.9)",
+              color: value === stage.value ? "#e8a020" : "rgba(255,255,255,0.6)",
+              borderLeft: value === stage.value ? "2px solid #e8a020" : "2px solid transparent",
             }}
           >
             {stage.label}
@@ -118,7 +117,7 @@ function StageSelector({ value, onChange, error }: StageSelectorProps) {
   );
 }
 
-// ── Progress Bar — amber ──────────────────────────────────────────────────────
+// ── Progress Bar ──────────────────────────────────────────────────────────────
 function ProgressBar({ step, total }: { step: number; total: number }) {
   return (
     <div className="flex items-center gap-3 mb-10">
@@ -128,8 +127,8 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
             <div
               className="w-7 h-7 flex items-center justify-center transition-all duration-300"
               style={{
-                border: `1px solid ${i < step ? "var(--color-amber)" : "rgba(255,255,255,0.12)"}`,
-                background: i < step ? "var(--color-amber)" : "transparent",
+                border: `1px solid ${i < step ? "#e8a020" : "rgba(255,255,255,0.2)"}`,
+                background: i < step ? "#e8a020" : "transparent",
               }}
             >
               {i < step - 1 ? (
@@ -137,8 +136,8 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
               ) : (
                 <span
                   style={{
-                    fontFamily: "var(--font-mono)", fontSize: "0.65rem",
-                    color: i === step - 1 ? "#0c0b09" : "rgba(240,237,230,0.3)",
+                    fontFamily: "'DM Mono', monospace", fontSize: "0.65rem",
+                    color: i === step - 1 ? "#0c0b09" : "rgba(255,255,255,0.5)",
                     fontWeight: i === step - 1 ? 700 : 400,
                   }}
                 >
@@ -146,21 +145,20 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
                 </span>
               )}
             </div>
-            {/* Pulse ring on active step */}
             {i === step - 1 && (
               <motion.div
                 className="absolute inset-0"
-                style={{ border: "1px solid rgba(232,160,32,0.4)" }}
+                style={{ border: "1px solid rgba(232,160,32,0.6)" }}
                 animate={{ scale: [1, 1.5], opacity: [0.6, 0] }}
                 transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut" }}
               />
             )}
           </div>
           {i < total - 1 && (
-            <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.08)" }}>
+            <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.15)" }}>
               <motion.div
                 className="h-full"
-                style={{ background: "var(--color-amber)" }}
+                style={{ background: "#e8a020" }}
                 animate={{ width: i < step - 1 ? "100%" : "0%" }}
                 transition={{ duration: 0.5, ease: "easeInOut" }}
               />
@@ -168,14 +166,14 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
           )}
         </React.Fragment>
       ))}
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.6rem", color: "rgba(240,237,230,0.28)" }}>
+      <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.6rem", color: "rgba(255,255,255,0.4)" }}>
         {step} / {total}
       </span>
     </div>
   );
 }
 
-// ── Success State — amber ─────────────────────────────────────────────────────
+// ── Success State ─────────────────────────────────────────────────────────────
 function SuccessState({ message }: { message: string }) {
   return (
     <motion.div
@@ -187,33 +185,33 @@ function SuccessState({ message }: { message: string }) {
       <motion.div
         className="w-20 h-20 flex items-center justify-center"
         style={{
-          border: "1px solid rgba(232,160,32,0.4)",
-          background: "rgba(232,160,32,0.08)",
+          border: "1px solid rgba(232,160,32,0.6)",
+          background: "rgba(232,160,32,0.1)",
         }}
-        animate={{ boxShadow: ["0 0 0 0 rgba(232,160,32,0.3)", "0 0 0 24px rgba(232,160,32,0)", "0 0 0 0 rgba(232,160,32,0)"] }}
+        animate={{ boxShadow: ["0 0 0 0 rgba(232,160,32,0.4)", "0 0 0 24px rgba(232,160,32,0)", "0 0 0 0 rgba(232,160,32,0)"] }}
         transition={{ duration: 2, repeat: Infinity }}
       >
-        <CheckCircle size={34} style={{ color: "var(--color-amber)" }} />
+        <CheckCircle size={34} style={{ color: "#e8a020" }} />
       </motion.div>
       <div className="space-y-3">
         <h3
-          style={{ fontFamily: "var(--font-display)", fontSize: "2rem", letterSpacing: "0.04em", color: "#f0ede6" }}
+          style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "2.5rem", letterSpacing: "0.04em", color: "#ffffff" }}
         >
           PITCH RECEIVED
         </h3>
-        <p style={{ fontFamily: "var(--font-mono)", fontSize: "0.78rem", lineHeight: 1.7, color: "rgba(240,237,230,0.5)" }}>
+        <p style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.85rem", lineHeight: 1.7, color: "rgba(255,255,255,0.7)" }}>
           {message}
         </p>
       </div>
       <span
         className="inline-flex items-center gap-2 px-4 py-2"
         style={{
-          fontFamily: "var(--font-mono)", fontSize: "0.62rem", letterSpacing: "0.12em",
-          textTransform: "uppercase", border: "1px solid rgba(232,160,32,0.3)",
-          color: "var(--color-amber)", background: "rgba(232,160,32,0.06)",
+          fontFamily: "'DM Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.12em",
+          textTransform: "uppercase", border: "1px solid rgba(232,160,32,0.4)",
+          color: "#e8a020", background: "rgba(232,160,32,0.08)",
         }}
       >
-        <span className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--color-amber)", animation: "amber-pulse 1.8s ease-in-out infinite" }} />
+        <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#e8a020", animation: "amber-pulse 1.8s ease-in-out infinite" }} />
         Welcome to the cohort
       </span>
     </motion.div>
@@ -260,7 +258,7 @@ export default function PitchPortal() {
 
   return (
     <section id="pitch" className="relative py-28 px-4">
-      {/* Subtle amber gradient — replaces violet blob */}
+      {/* Subtle amber gradient */}
       <div
         className="absolute inset-0 pointer-events-none overflow-hidden"
         aria-hidden
@@ -269,7 +267,7 @@ export default function PitchPortal() {
           style={{
             position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)",
             width: 500, height: 320,
-            background: "radial-gradient(ellipse, rgba(232,160,32,0.05) 0%, transparent 70%)",
+            background: "radial-gradient(ellipse, rgba(232,160,32,0.08) 0%, transparent 70%)",
             filter: "blur(60px)",
           }}
         />
@@ -284,29 +282,29 @@ export default function PitchPortal() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
           className="mb-16"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", paddingBottom: "2.5rem" }}
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.1)", paddingBottom: "2.5rem" }}
         >
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
             <div>
               <span
                 className="inline-flex items-center gap-3 mb-5"
-                style={{ fontFamily: "var(--font-mono)", fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(240,237,230,0.3)" }}
+                style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)" }}
               >
-                <span className="w-5 h-px" style={{ background: "var(--color-amber)", opacity: 0.7 }} />
+                <span className="w-5 h-px" style={{ background: "#e8a020", opacity: 0.8 }} />
                 {sectionLabel}
               </span>
               <h2
                 style={{
-                  fontFamily: "var(--font-display)",
-                  fontSize: "clamp(3rem, 7vw, 5rem)",
-                  lineHeight: 0.95, letterSpacing: "0.01em",
-                  color: "rgba(240,237,230,0.9)", textTransform: "uppercase",
+                  fontFamily: "'Bebas Neue', sans-serif",
+                  fontSize: "clamp(3.5rem, 7vw, 5.5rem)",
+                  lineHeight: 0.95, letterSpacing: "0.02em",
+                  color: "#ffffff", textTransform: "uppercase",
                 }}
               >
                 {headline}
               </h2>
             </div>
-            <p style={{ fontFamily: "var(--font-mono)", fontSize: "0.78rem", lineHeight: 1.7, color: "rgba(240,237,230,0.35)", maxWidth: 340 }}>
+            <p style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.85rem", lineHeight: 1.7, color: "rgba(255,255,255,0.5)", maxWidth: 380 }}>
               {subheadline}
             </p>
           </div>
@@ -318,19 +316,20 @@ export default function PitchPortal() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="max-w-lg mx-auto"
+          className="max-w-xl mx-auto"
         >
           <div
             style={{
-              border: "1px solid rgba(255,255,255,0.08)",
-              background: "rgba(17,16,8,0.85)",
-              backdropFilter: "blur(16px)",
+              border: "1px solid rgba(255,255,255,0.15)",
+              background: "rgba(12,11,9,0.95)",
+              backdropFilter: "blur(20px)",
+              boxShadow: "0 20px 40px -10px rgba(0,0,0,0.5)"
             }}
           >
             {/* Top amber rule */}
-            <div style={{ height: 2, background: "var(--color-amber)", opacity: 0.7 }} />
+            <div style={{ height: 3, background: "#e8a020", opacity: 0.9 }} />
 
-            <div className="p-8 md:p-10">
+            <div className="p-8 md:p-12">
               {successMsg ? (
                 <SuccessState message={successMsg} />
               ) : (
@@ -348,18 +347,18 @@ export default function PitchPortal() {
                       className="mb-8"
                     >
                       <h3
-                        style={{ fontFamily: "var(--font-display)", fontSize: "1.6rem", letterSpacing: "0.04em", color: "#f0ede6", textTransform: "uppercase" }}
+                        style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "2rem", letterSpacing: "0.04em", color: "#ffffff", textTransform: "uppercase" }}
                       >
                         {stepConfig.title}
                       </h3>
-                      <p style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", color: "rgba(240,237,230,0.35)", marginTop: 4 }}>
+                      <p style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.8rem", color: "rgba(255,255,255,0.5)", marginTop: 6 }}>
                         {stepConfig.subtitle}
                       </p>
                     </motion.div>
                   </AnimatePresence>
 
                   {/* Fields */}
-                  <div className="relative overflow-hidden min-h-[200px]">
+                  <div className="relative overflow-hidden min-h-[220px]">
                     <AnimatePresence custom={direction} mode="wait">
                       <motion.div
                         key={currentStep}
@@ -368,7 +367,7 @@ export default function PitchPortal() {
                         initial="enter"
                         animate="center"
                         exit="exit"
-                        className="flex flex-col gap-5"
+                        className="flex flex-col gap-6"
                       >
                         {currentStep === 1 && (
                           <>
@@ -380,8 +379,8 @@ export default function PitchPortal() {
                                 placeholder="Aarav Sharma"
                                 autoComplete="name"
                                 aria-invalid={!!errors.name}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(232,160,32,0.6)"; e.currentTarget.style.background = "rgba(232,160,32,0.04)"; }}
-                                onBlur={(e)  => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.background = "rgba(255,255,255,0.025)"; }}
+                                onFocus={(e) => { e.currentTarget.style.borderColor = "#e8a020"; e.currentTarget.style.background = "rgba(232,160,32,0.05)"; }}
+                                onBlur={(e)  => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)"; e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
                               />
                             </FieldWrapper>
                             <FieldWrapper label="Email Address" error={errors.email?.message} hint="Use your @iiserbhopal.ac.in email for priority review.">
@@ -393,8 +392,8 @@ export default function PitchPortal() {
                                 placeholder="aarav@iiserbhopal.ac.in"
                                 autoComplete="email"
                                 aria-invalid={!!errors.email}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(232,160,32,0.6)"; e.currentTarget.style.background = "rgba(232,160,32,0.04)"; }}
-                                onBlur={(e)  => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.background = "rgba(255,255,255,0.025)"; }}
+                                onFocus={(e) => { e.currentTarget.style.borderColor = "#e8a020"; e.currentTarget.style.background = "rgba(232,160,32,0.05)"; }}
+                                onBlur={(e)  => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)"; e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
                               />
                             </FieldWrapper>
                           </>
@@ -409,8 +408,8 @@ export default function PitchPortal() {
                                 style={inputStyle}
                                 placeholder="e.g. NeuroGrid, SolarMesh, BioTrace..."
                                 aria-invalid={!!errors.ideaName}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(232,160,32,0.6)"; e.currentTarget.style.background = "rgba(232,160,32,0.04)"; }}
-                                onBlur={(e)  => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.background = "rgba(255,255,255,0.025)"; }}
+                                onFocus={(e) => { e.currentTarget.style.borderColor = "#e8a020"; e.currentTarget.style.background = "rgba(232,160,32,0.05)"; }}
+                                onBlur={(e)  => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)"; e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
                               />
                             </FieldWrapper>
                             <StageSelector
@@ -434,8 +433,8 @@ export default function PitchPortal() {
                               style={inputStyle}
                               placeholder="Describe the problem clearly: who faces it, how often, and why existing solutions fall short..."
                               aria-invalid={!!errors.problem}
-                              onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(232,160,32,0.6)"; e.currentTarget.style.background = "rgba(232,160,32,0.04)"; }}
-                              onBlur={(e)  => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.background = "rgba(255,255,255,0.025)"; }}
+                              onFocus={(e) => { e.currentTarget.style.borderColor = "#e8a020"; e.currentTarget.style.background = "rgba(232,160,32,0.05)"; }}
+                              onBlur={(e)  => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)"; e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
                             />
                           </FieldWrapper>
                         )}
@@ -452,18 +451,18 @@ export default function PitchPortal() {
                         exit={{ opacity: 0, height: 0 }}
                         className="mt-4 px-4 py-3 flex items-center gap-2 text-rose-300"
                         style={{
-                          fontFamily: "var(--font-mono)", fontSize: "0.7rem",
-                          border: "1px solid rgba(244,63,94,0.3)",
-                          background: "rgba(244,63,94,0.06)",
+                          fontFamily: "'DM Mono', monospace", fontSize: "0.75rem",
+                          border: "1px solid rgba(244,63,94,0.4)",
+                          background: "rgba(244,63,94,0.1)",
                         }}
                       >
-                        <AlertTriangle size={13} className="shrink-0" />{serverError}
+                        <AlertTriangle size={15} className="shrink-0" />{serverError}
                       </motion.div>
                     )}
                   </AnimatePresence>
 
                   {/* Navigation */}
-                  <div className="flex items-center justify-between mt-8 gap-4" style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: "1.5rem" }}>
+                  <div className="flex items-center justify-between mt-8 gap-4" style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "1.5rem" }}>
                     {currentStep > 1 ? (
                       <motion.button
                         type="button"
@@ -472,13 +471,13 @@ export default function PitchPortal() {
                         whileTap={{ scale: 0.97 }}
                         className="flex items-center gap-2 px-5 py-3 transition-all duration-200"
                         style={{
-                          fontFamily: "var(--font-mono)", fontSize: "0.7rem", letterSpacing: "0.08em",
-                          border: "1px solid rgba(255,255,255,0.1)", color: "rgba(240,237,230,0.45)",
+                          fontFamily: "'DM Mono', monospace", fontSize: "0.75rem", letterSpacing: "0.08em",
+                          border: "1px solid rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.6)",
                         }}
-                        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.2)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(240,237,230,0.7)"; }}
-                        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.1)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(240,237,230,0.45)"; }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.4)"; (e.currentTarget as HTMLButtonElement).style.color = "#ffffff"; }}
+                        onHoverEnd={(e) => { (e.target as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.2)"; (e.target as HTMLButtonElement).style.color = "rgba(255,255,255,0.6)"; }}
                       >
-                        <ArrowLeft size={13} />
+                        <ArrowLeft size={14} />
                         BACK
                       </motion.button>
                     ) : <div />}
@@ -491,12 +490,12 @@ export default function PitchPortal() {
                         whileTap={{ scale: 0.98 }}
                         className="flex items-center gap-2 px-6 py-3 transition-all duration-200"
                         style={{
-                          fontFamily: "var(--font-mono)", fontSize: "0.7rem", letterSpacing: "0.08em",
-                          background: "var(--color-amber)", color: "#0c0b09", fontWeight: 600,
+                          fontFamily: "'DM Mono', monospace", fontSize: "0.75rem", letterSpacing: "0.08em",
+                          background: "#e8a020", color: "#000000", fontWeight: 700,
                         }}
                       >
                         CONTINUE
-                        <ArrowRight size={13} />
+                        <ArrowRight size={14} />
                       </motion.button>
                     ) : (
                       <motion.button
@@ -506,14 +505,14 @@ export default function PitchPortal() {
                         whileTap={!isPending ? { scale: 0.98 } : {}}
                         className="flex items-center gap-2 px-6 py-3 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{
-                          fontFamily: "var(--font-mono)", fontSize: "0.7rem", letterSpacing: "0.08em",
-                          background: "var(--color-amber)", color: "#0c0b09", fontWeight: 700,
+                          fontFamily: "'DM Mono', monospace", fontSize: "0.75rem", letterSpacing: "0.08em",
+                          background: "#e8a020", color: "#000000", fontWeight: 700,
                         }}
                       >
                         {isPending ? (
-                          <><Loader2 size={13} className="animate-spin" />SUBMITTING...</>
+                          <><Loader2 size={14} className="animate-spin" />SUBMITTING...</>
                         ) : (
-                          <>SUBMIT PITCH<ArrowUpRight size={13} /></>
+                          <>SUBMIT PITCH<ArrowUpRight size={14} /></>
                         )}
                       </motion.button>
                     )}
@@ -524,8 +523,8 @@ export default function PitchPortal() {
           </div>
 
           <p
-            className="text-center mt-5"
-            style={{ fontFamily: "var(--font-mono)", fontSize: "0.62rem", letterSpacing: "0.08em", color: "rgba(240,237,230,0.2)" }}
+            className="text-center mt-6"
+            style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.7rem", letterSpacing: "0.08em", color: "rgba(255,255,255,0.3)" }}
           >
             Your idea is safe with us. We don&apos;t share submissions with third parties.
           </p>
