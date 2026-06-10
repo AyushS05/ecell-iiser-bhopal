@@ -29,7 +29,7 @@ export default function PrivacyPage() {
             contact information are collected, stored, and utilized by the incubator.
           </p>
           <p>
-            For urgent inquiries regarding data privacy, please contact us at <a href="mailto:iice@iiserb.ac.in" style={{ color: "#E8A020" }}>iice@iiserb.ac.in</a>.
+            For urgent inquiries regarding data privacy, please contact us at <a href="mailto:ecell@iiserb.ac.in" style={{ color: "#E8A020" }}>ecell@iiserb.ac.in</a>.
           </p>
         </div>
       </div>

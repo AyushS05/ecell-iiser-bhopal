@@ -8,7 +8,7 @@ export const siteConfig = {
   description:
     "E-Cell IISER Bhopal empowers students to build science-backed startups. Join our deep-tech incubator, pitch programs, and global mentorship network.",
     
-  url: "https://ecell.iiserbhopal.ac.in",
+  url: "https://iice.iiserbhopal.ac.in",
   ogImage: "/og.png",
 
   // ── Navigation ────────────────────────────────────────────────────────────
@@ -118,7 +118,7 @@ export const siteConfig = {
     tagline: "Building tomorrow's founders, today.",
     institution: "Indian Institute of Science Education and Research, Bhopal",
     address: "Bhauri, Bhopal Bypass Road, Bhopal - 462066, Madhya Pradesh",
-    email: "iice@iiserb.ac.in",
+    email: "ecell@iiserb.ac.in",
     footerLinks: [
       { label: "Explore Our Vision", href: "/#vision" },
       { label: "Meet the Team", href: "/team" },
