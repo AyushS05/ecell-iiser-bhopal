@@ -2,6 +2,11 @@
 // components/ScrollIntro.tsx
 // ─────────────────────────────────────────────────────────────────────────────
 // E-Cell Arc Reactor — Cinematic Slow Scroll
+//
+// FIX: setIntroActive(false) was being called inside finish() while the flash
+// animation was still in progress, causing DeferredScene to mount Three.js
+// (triggering shader compilation) mid-animation. Now setIntroActive(false) is
+// only called after isMounted becomes false (component fully gone from DOM).
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useRef, useEffect, useState, useCallback, memo } from "react";
@@ -44,7 +49,6 @@ function ScrambleText({
 
     const startId = requestAnimationFrame(() => {
       const frame = (time: number) => {
-        // ~30fps cap — halve DOM write frequency
         frameSkip++;
         if (frameSkip % 2 !== 0) {
           animId = requestAnimationFrame(frame);
@@ -417,18 +421,31 @@ export default function ScrollIntro() {
   // Responsive check
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile(); // Check on mount
+    checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   useEffect(() => {
     if (hasPlayedIntro) {
+      // Already played: release DeferredScene immediately (no animation running)
       setIntroActive(false);
     } else {
       setIntroActive(true);
     }
   }, [setIntroActive]);
+
+  // ─── KEY FIX: only release DeferredScene AFTER isMounted → false ──────────
+  // Previously setIntroActive(false) was called inside finish() while the
+  // flash/fade was still running, causing Three.js shader compile to fire
+  // mid-animation. Now we watch isMounted and only release when the component
+  // is fully gone from the DOM.
+  useEffect(() => {
+    if (!isMounted && doneRef.current) {
+      setIntroActive(false);
+    }
+  }, [isMounted, setIntroActive]);
+  // ──────────────────────────────────────────────────────────────────────────
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -471,9 +488,11 @@ export default function ScrollIntro() {
     hasPlayedIntro = true;
     setIsFadingOut(true);
     window.scrollTo({ top: 0, behavior: "instant" });
-    setIntroActive(false);
+    // NOTE: setIntroActive(false) is NOT called here anymore.
+    // It is called in the useEffect above that watches isMounted,
+    // so Three.js only mounts after the component is fully unmounted.
     setTimeout(() => setIsMounted(false), 55);
-  }, [setIntroActive]);
+  }, []);
 
   const resumeAuto = useCallback((from: number) => {
     if (doneRef.current || autoCtrlRef.current) return;
@@ -484,7 +503,7 @@ export default function ScrollIntro() {
     requestAnimationFrame(() => { syncingScrollRef.current = false; });
     autoProg.set(from);
     autoCtrlRef.current = animate(autoProg, 1, {
-      duration: 10 * remaining, 
+      duration: 12 * remaining,
       ease: "linear",
       onComplete: finish,
     });
@@ -496,7 +515,7 @@ export default function ScrollIntro() {
     window.scrollTo({ top: 0, behavior: "instant" });
     autoProg.set(0);
     autoCtrlRef.current = animate(autoProg, 1, {
-      duration: 10, 
+      duration: 12,
       ease: "linear",
       onComplete: finish,
     });
@@ -558,17 +577,17 @@ export default function ScrollIntro() {
   });
 
   // ─── RESPONSIVE TRANSFORMS ────────────────────────────────────────────────
-  
+
   const scaleDesktop = useTransform(
     progress,
     [0,      0.04,    0.10,    0.22,    0.34,    0.55,    0.80,    0.93,    0.97],
     [0.5,    0.53,    0.61,    0.76,    0.89,    0.95,    0.865,   0.755,   0.265]
   );
-  
+
   const scaleMobile = useTransform(
     progress,
     [0,      0.04,    0.10,    0.22,    0.34,    0.55,    0.80,    0.93,    0.97],
-    [0.45,   0.48,    0.55,    0.65,    0.72,    0.78,    0.72,    0.60,    0.25]
+    [0.40,   0.42,    0.48,    0.58,    0.65,    0.72,    0.68,    0.55,    0.25]
   );
 
   const txDesktop = useTransform(
@@ -580,28 +599,26 @@ export default function ScrollIntro() {
   const txMobile = useTransform(
     progress,
     [0,      0.10,   0.36,   0.65,   0.90],
-    ["-50%", "-50%", "-50%", "-50%", "-50%"] // Prevent shifting off-screen
+    ["-50%", "-50%", "-50%", "-50%", "-50%"]
   );
 
-  const tyDesktop = useTransform(progress, [0, 1], ["-50%", "-50%"]); // Static vertical center
-  
+  const tyDesktop = useTransform(progress, [0, 1], ["-50%", "-50%"]);
+
   const tyMobile = useTransform(
     progress,
     [0,      0.10,   0.36,   0.65,   0.90],
-    ["-50%", "-50%", "-28%", "-38%", "-50%"] // Shift down to avoid text overlap
+    ["-30%", "-30%", "-5%", "-15%", "-30%"]
   );
-
-  // ─────────────────────────────────────────────────────────────────────────
 
   const reactorRotY = useTransform(
     progress,
-    [0,   0.05,  0.15,  0.25,  0.40,  0.60,  0.85, 1.0], 
+    [0,   0.05,  0.15,  0.25,  0.40,  0.60,  0.85, 1.0],
     [0,    0,    -9,   -42,   -12,    5,     1,    0]
   );
-  
+
   const reactorRotX = useTransform(
     progress,
-    [0,   0.05,  0.15,  0.25,  0.40,  0.60,  0.85, 1.0], 
+    [0,   0.05,  0.15,  0.25,  0.40,  0.60,  0.85, 1.0],
     [0,    0,    14,    28,     4,    -4,     1,    0]
   );
 
@@ -635,21 +652,21 @@ export default function ScrollIntro() {
 
   const dismantle = useTransform(
     progress,
-    [0.62, 0.74, 0.80, 0.90],
+    [0.60, 0.68, 0.88, 0.96],
     [0,    1,    1,    0]
   );
 
-  const tagOpacity   = useTransform(progress, [0.02, 0.07, 0.78, 0.88], [0, 1, 1, 0]);
+  const tagOpacity   = useTransform(progress, [0.02, 0.07, 0.88, 0.96], [0, 1, 1, 0]);
   const tagY         = useTransform(progress, [0.02, 0.07], [10, 0]);
-  const titleOpacity = useTransform(progress, [0.03, 0.10, 0.76, 0.86], [0, 1, 1, 0]);
+  const titleOpacity = useTransform(progress, [0.03, 0.10, 0.88, 0.96], [0, 1, 1, 0]);
   const titleY       = useTransform(progress, [0.03, 0.10], [24, 0]);
-  const subOpacity   = useTransform(progress, [0.07, 0.14, 0.74, 0.84], [0, 1, 1, 0]);
+  const subOpacity   = useTransform(progress, [0.07, 0.14, 0.88, 0.96], [0, 1, 1, 0]);
   const subY         = useTransform(progress, [0.07, 0.14], [14, 0]);
 
-  const dismantleHeadOp = useTransform(progress, [0.63, 0.72, 0.78, 0.88], [0, 1, 1, 0]);
-  const dismantleHeadY  = useTransform(progress, [0.63, 0.72], [16, 0]);
+  const dismantleHeadOp = useTransform(progress, [0.61, 0.68, 0.88, 0.95], [0, 1, 1, 0]);
+  const dismantleHeadY  = useTransform(progress, [0.61, 0.68], [16, 0]);
 
-  const scanOp  = useTransform(progress, [0.06, 0.14, 0.88, 0.94], [0, 1, 1, 0]);
+  const scanOp  = useTransform(progress, [0.06, 0.14, 0.88, 0.96], [0, 1, 1, 0]);
   const nudgeOp = useTransform(progress, [0, 0.05, 0.18], [1, 1, 0]);
 
   if (!isMounted) return <div ref={containerRef} style={{ display: "none" }} aria-hidden="true" />;
@@ -747,7 +764,7 @@ export default function ScrollIntro() {
             style={{
               position: "absolute",
               left: isMobile ? "clamp(1.5rem, 5vw, 2.5rem)" : "clamp(2rem, 4vw, 4.5rem)",
-              top: isMobile ? "28%" : "50%",
+              top: isMobile ? "18%" : "50%",
               transform: "translateY(-50%)",
               zIndex: 5, pointerEvents: "none",
               display: "flex", flexDirection: "column",
@@ -805,7 +822,7 @@ export default function ScrollIntro() {
           <motion.div
             style={{
               position: "absolute",
-              bottom: isMobile ? "4.5rem" : "3.5rem", 
+              bottom: isMobile ? "4.5rem" : "3.5rem",
               left: isMobile ? "1.5rem" : "clamp(2rem, 4vw, 4.5rem)",
               opacity: dismantleHeadOp, y: dismantleHeadY,
               zIndex: 6, pointerEvents: "none",
@@ -838,8 +855,8 @@ export default function ScrollIntro() {
           {/* ── Coordinates ── */}
           <motion.div
             style={{
-              position: "absolute", 
-              bottom: isMobile ? "1.5rem" : "2.5rem", 
+              position: "absolute",
+              bottom: isMobile ? "1.5rem" : "2.5rem",
               right: isMobile ? "1.5rem" : "2.5rem",
               opacity: tagOpacity, zIndex: 6, pointerEvents: "none",
               textAlign: "right",
