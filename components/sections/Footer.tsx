@@ -4,6 +4,7 @@
 // Editorial Brutalism Footer.
 // FIXED: High contrast text, structured borders, hardcoded fonts and hex colors.
 // FIXED: Duplicate React key error on legal links mapping.
+// ADDED: Subtle "developed by Ayush Sarkar" credit in bottom bar.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { motion } from "framer-motion";
@@ -67,7 +68,7 @@ export default function Footer() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="md:col-span-4 py-14"
+            className="md:col-span-4 py-14 flex flex-col"
             style={{ borderRight: "1px solid rgba(255,255,255,0.15)", paddingRight: "3rem" }}
           >
             {/* Wordmark */}
@@ -153,6 +154,26 @@ export default function Footer() {
                   </motion.a>
                 );
               })}
+            </div>
+
+            {/* Legal links — anchored to bottom of brand column */}
+            <div className="flex items-center gap-5 mt-auto pt-10">
+              {footer.legalLinks.map((link: { href: string; label: string }) => (
+                <Link
+                  key={link.label}
+                  href={link.href as any}
+                  style={{
+                    fontFamily: "'DM Mono', monospace",
+                    fontSize: "0.6rem",
+                    letterSpacing: "0.1em",
+                    color: "rgba(255,255,255,0.3)",
+                  }}
+                  onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "rgba(255,255,255,0.7)")}
+                  onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "rgba(255,255,255,0.3)")}
+                >
+                  {link.label}
+                </Link>
+              ))}
             </div>
           </motion.div>
 
@@ -303,6 +324,8 @@ export default function Footer() {
 
         {/* ── Bottom bar ── */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-6">
+
+          {/* Left: copyright only */}
           <p
             style={{
               fontFamily: "'DM Mono', monospace",
@@ -313,24 +336,30 @@ export default function Footer() {
           >
             {footer.copyright}
           </p>
-          <div className="flex items-center gap-6">
-            {footer.legalLinks.map((link: { href: string; label: string }) => (
-              <Link
-                key={link.label} // ── FIX: Uses link.label instead of link.href
-                href={link.href as any}
-                style={{
-                  fontFamily: "'DM Mono', monospace",
-                  fontSize: "0.65rem",
-                  letterSpacing: "0.08em",
-                  color: "rgba(255,255,255,0.4)",
-                }}
-                onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#ffffff")}
-                onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "rgba(255,255,255,0.4)")}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
+
+          {/* Right corner: developer credit linked to LinkedIn */}
+          <p
+            style={{
+              fontFamily: "'DM Mono', monospace",
+              fontSize: "0.6rem",
+              letterSpacing: "0.08em",
+              color: "rgba(255,255,255,0.2)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Developed by{" "}
+            <a
+              href="https://www.linkedin.com/in/ayush-sarkar-04b7b5371"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "rgba(232,160,32,0.45)", textDecoration: "none" }}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#e8a020")}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "rgba(232,160,32,0.45)")}
+            >
+              Ayush Sarkar
+            </a>
+          </p>
+
         </div>
 
       </div>

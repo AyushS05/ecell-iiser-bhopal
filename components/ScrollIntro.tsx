@@ -503,7 +503,7 @@ export default function ScrollIntro() {
     requestAnimationFrame(() => { syncingScrollRef.current = false; });
     autoProg.set(from);
     autoCtrlRef.current = animate(autoProg, 1, {
-      duration: 12 * remaining,
+      duration: 10.5 * remaining,
       ease: "linear",
       onComplete: finish,
     });
@@ -515,7 +515,7 @@ export default function ScrollIntro() {
     window.scrollTo({ top: 0, behavior: "instant" });
     autoProg.set(0);
     autoCtrlRef.current = animate(autoProg, 1, {
-      duration: 12,
+      duration: 10.5,
       ease: "linear",
       onComplete: finish,
     });
