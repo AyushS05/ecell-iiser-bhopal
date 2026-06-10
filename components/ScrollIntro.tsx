@@ -587,7 +587,7 @@ export default function ScrollIntro() {
   const scaleMobile = useTransform(
     progress,
     [0,      0.04,    0.10,    0.22,    0.34,    0.55,    0.80,    0.93,    0.97],
-    [0.40,   0.42,    0.48,    0.58,    0.65,    0.72,    0.68,    0.55,    0.25]
+    [0.55,   0.57,    0.63,    0.72,    0.78,    0.82,    0.76,    0.62,    0.28]
   );
 
   const txDesktop = useTransform(
@@ -604,11 +604,7 @@ export default function ScrollIntro() {
 
   const tyDesktop = useTransform(progress, [0, 1], ["-50%", "-50%"]);
 
-  const tyMobile = useTransform(
-    progress,
-    [0,      0.10,   0.36,   0.65,   0.90],
-    ["-20%", "-20%", "-10%", "-15%", "-20%"]
-  );
+  const tyMobile = useTransform(progress, [0, 1], ["-50%", "-50%"]);
 
   const reactorRotY = useTransform(
     progress,
@@ -764,21 +760,21 @@ export default function ScrollIntro() {
             style={{
               position: "absolute",
               left: isMobile ? "clamp(1.5rem, 5vw, 2.5rem)" : "clamp(2rem, 4vw, 4.5rem)",
-              top: isMobile ? "3rem" : "50%",
+              top: isMobile ? "2rem" : "50%",
               transform: isMobile ? "none" : "translateY(-50%)",
               zIndex: 5, pointerEvents: "none",
               display: "flex", flexDirection: "column",
-              maxWidth: isMobile ? "90vw" : "min(400px, 38vw)",
+              maxWidth: isMobile ? "75vw" : "min(400px, 38vw)",
             }}
           >
-            <motion.div style={{ y: tagY, opacity: tagOpacity, marginBottom: "1.5rem" }}>
+            <motion.div style={{ y: tagY, opacity: tagOpacity, marginBottom: "0.75rem" }}>
               <ScrambleText
                 text="VENTURE.CORE // BOOTSTRAP"
                 active={sc.tag} speed={28} stagger={42}
                 style={{
                   fontFamily: "'DM Mono', monospace", fontWeight: 400,
-                  fontSize: isMobile ? "0.6rem" : "clamp(0.52rem, 1vw, 0.68rem)",
-                  letterSpacing: "0.5em", color: "#E8A020",
+                  fontSize: isMobile ? "0.52rem" : "clamp(0.52rem, 1vw, 0.68rem)",
+                  letterSpacing: "0.4em", color: "#E8A020",
                   textTransform: "uppercase",
                 }}
               />
@@ -790,7 +786,7 @@ export default function ScrollIntro() {
                 active={sc.title} speed={45} stagger={100}
                 style={{
                   fontFamily: "'Bebas Neue', sans-serif", fontWeight: 900,
-                  fontSize: isMobile ? "clamp(4.5rem, 18vw, 6rem)" : "clamp(5rem, 14vw, 11rem)",
+                  fontSize: isMobile ? "clamp(3.8rem, 16vw, 5rem)" : "clamp(5rem, 14vw, 11rem)",
                   lineHeight: 0.88, letterSpacing: "0.02em",
                   background: "linear-gradient(155deg,#ffffff 0%,#ffd97a 40%,#E8A020 100%)",
                   WebkitBackgroundClip: "text",
@@ -798,18 +794,18 @@ export default function ScrollIntro() {
                   backgroundClip: "text",
                   filter: "drop-shadow(0 0 24px rgba(232,160,32,0.3))",
                   userSelect: "none",
-                  minHeight: isMobile ? "5rem" : "8rem",
+                  minHeight: isMobile ? "4rem" : "8rem",
                 }}
               />
             </motion.div>
 
-            <motion.div style={{ y: subY, opacity: subOpacity, marginTop: "1.5rem" }}>
+            <motion.div style={{ y: subY, opacity: subOpacity, marginTop: "0.75rem" }}>
               <ScrambleText
                 text="IISER  BHOPAL"
                 active={sc.sub} speed={32} stagger={55}
                 style={{
                   fontFamily: "'DM Mono', monospace", fontWeight: 400,
-                  fontSize: isMobile ? "1rem" : "clamp(0.85rem, 2.2vw, 1.4rem)",
+                  fontSize: isMobile ? "0.85rem" : "clamp(0.85rem, 2.2vw, 1.4rem)",
                   letterSpacing: "0.42em",
                   color: "rgba(240,237,230,0.5)",
                   height: "1.8rem",
@@ -822,7 +818,7 @@ export default function ScrollIntro() {
           <motion.div
             style={{
               position: "absolute",
-              bottom: isMobile ? "4.5rem" : "3.5rem",
+              bottom: isMobile ? "4rem" : "3.5rem",
               left: isMobile ? "1.5rem" : "clamp(2rem, 4vw, 4.5rem)",
               opacity: dismantleHeadOp, y: dismantleHeadY,
               zIndex: 6, pointerEvents: "none",
@@ -831,7 +827,7 @@ export default function ScrollIntro() {
             <div
               style={{
                 fontFamily: "'DM Mono', monospace",
-                fontSize: "clamp(0.55rem, 1vw, 0.68rem)",
+                fontSize: isMobile ? "0.52rem" : "clamp(0.55rem, 1vw, 0.68rem)",
                 letterSpacing: "0.48em", textTransform: "uppercase",
                 color: "rgba(232,160,32,0.7)",
                 borderTop: "1px solid rgba(232,160,32,0.2)",
@@ -843,7 +839,7 @@ export default function ScrollIntro() {
             <div
               style={{
                 fontFamily: "'DM Mono', monospace",
-                fontSize: "clamp(0.48rem, 0.85vw, 0.60rem)",
+                fontSize: isMobile ? "0.44rem" : "clamp(0.48rem, 0.85vw, 0.60rem)",
                 letterSpacing: "0.28em", textTransform: "uppercase",
                 color: "rgba(240,237,230,0.28)",
               }}
@@ -856,7 +852,7 @@ export default function ScrollIntro() {
           <motion.div
             style={{
               position: "absolute",
-              bottom: isMobile ? "5rem" : "2.5rem",
+              bottom: isMobile ? "4rem" : "2.5rem",
               right: isMobile ? "1.5rem" : "2.5rem",
               opacity: isMobile ? 0.85 : tagOpacity,
               zIndex: 6, pointerEvents: "none",
