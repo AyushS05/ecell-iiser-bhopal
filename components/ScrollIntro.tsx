@@ -523,7 +523,7 @@ export default function ScrollIntro() {
 
   useEffect(() => {
     if (!isMounted || doneRef.current) return;
-    const t = setTimeout(() => startAuto(), 150);
+    const t = setTimeout(() => startAuto(), 600);
     return () => clearTimeout(t);
   }, [startAuto, isMounted]);
 
