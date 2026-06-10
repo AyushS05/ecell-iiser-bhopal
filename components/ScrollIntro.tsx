@@ -430,21 +430,51 @@ export default function ScrollIntro() {
     offset: ["start start", "end end"],
   });
 
-  // ─── PERF: Only TWO motion values now (was three).
-  // scrollProg is eliminated entirely. progress is updated directly
-  // in the scroll handler and the autoProg listener — one fewer
-  // subscriber chain firing on every scroll tick.
+  // progress is the single source of truth for all animation.
+  // During auto-play:  autoProg drives progress directly.
+  // During scroll:     scrollYProgress drives progress directly.
+  // Handoff:           we sync the page scroll position to match
+  //                    where auto stopped — eliminating the dead zone
+  //                    where max(auto, scroll) would freeze the reactor.
   const autoProg = useMotionValue(0);
   const progress = useMotionValue(0);
 
-  // autoProg listener: only fires during the auto-play animation
+  // Flag: true while we are programmatically scrolling to sync position.
+  // During that window we ignore scrollYProgress events so they don't
+  // fight the window.scrollTo we just issued.
+  const syncingScrollRef = useRef(false);
+
+  // Helper: convert a progress value [0,1] → page scroll offset in px.
+  // The container is 900vh tall; scrollYProgress = scrollTop / (scrollHeight - vh).
+  const progressToScrollTop = useCallback((p: number) => {
+    if (!containerRef.current) return 0;
+    const scrollable = containerRef.current.scrollHeight - window.innerHeight;
+    return p * scrollable;
+  }, []);
+
+  // Helper: update sc state only when a threshold boundary is crossed.
+  const updateSc = useCallback((p: number) => {
+    const cur = scRef.current;
+    const nTag   = p > 0.02;
+    const nTitle = p > 0.03;
+    const nSub   = p > 0.07;
+    if (cur.tag !== nTag || cur.title !== nTitle || cur.sub !== nSub) {
+      const next = { tag: nTag, title: nTitle, sub: nSub };
+      scRef.current = next;
+      setSc(next);
+    }
+  }, []);
+
+  // autoProg listener — runs during auto-play only.
+  // Drives progress directly; scroll position is irrelevant here because
+  // the page hasn't been scrolled yet (still at top).
   useEffect(() => {
     const ua = autoProg.on("change", (v) => {
-      // During auto-play, scrollYProgress is 0, so max is always v
-      progress.set(Math.max(v, scrollYProgress.get()));
+      progress.set(v);
+      updateSc(v);
     });
     return ua;
-  }, [autoProg, progress, scrollYProgress]);
+  }, [autoProg, progress, updateSc]);
 
   const finish = useCallback(() => {
     if (doneRef.current) return;
@@ -460,6 +490,11 @@ export default function ScrollIntro() {
     if (doneRef.current || autoCtrlRef.current) return;
     const remaining = 1 - from;
     if (remaining <= 0) { finish(); return; }
+    // Teleport scroll to top so scrollYProgress doesn't fight autoProg.
+    // The syncing flag prevents the resulting scroll event from being processed.
+    syncingScrollRef.current = true;
+    window.scrollTo({ top: 0, behavior: "instant" });
+    requestAnimationFrame(() => { syncingScrollRef.current = false; });
     autoProg.set(from);
     autoCtrlRef.current = animate(autoProg, 1, {
       duration: 18 * remaining,
@@ -471,6 +506,9 @@ export default function ScrollIntro() {
   const startAuto = useCallback(() => {
     if (doneRef.current) return;
     autoCtrlRef.current?.stop();
+    // Reset scroll to top before auto begins so scrollYProgress = 0
+    window.scrollTo({ top: 0, behavior: "instant" });
+    autoProg.set(0);
     autoCtrlRef.current = animate(autoProg, 1, {
       duration: 18,
       ease: "linear",
@@ -484,13 +522,15 @@ export default function ScrollIntro() {
     return () => clearTimeout(t);
   }, [startAuto, isMounted]);
 
-  // ─── PERF: The hot scroll handler — runs at 60fps during scroll.
-  // Every line here is load-bearing. Changes:
-  //  1. No scrollProg.set() — we write to progress directly (one fewer dispatch)
-  //  2. sc threshold check uses ref comparison, never calls setSc unless
-  //     a threshold boundary is actually crossed
+  // Hot scroll handler — runs at 60fps during scroll.
+  // Key insight: when the user first interrupts auto, we teleport the page
+  // scroll position to match progress.get(). From that moment, scrollYProgress
+  // and progress are in perfect sync — no dead zone, no stickiness.
   useMotionValueEvent(scrollYProgress, "change", (v) => {
     if (!isMounted || doneRef.current) return;
+
+    // While we're doing the sync scroll, ignore incoming events
+    if (syncingScrollRef.current) return;
 
     const prev    = prevScrollRef.current;
     const goingUp = v < prev - 0.001;
@@ -501,49 +541,44 @@ export default function ScrollIntro() {
       idleTimerRef.current = null;
     }
 
-    if (goingUp) {
-      autoCtrlRef.current?.stop();
-      autoCtrlRef.current = null;
-
-      if (v < 0.02) {
-        autoProg.set(0);
-        progress.set(0);
-        // Reset sc ref and state
-        scRef.current = { tag: false, title: false, sub: false };
-        setSc({ tag: false, title: false, sub: false });
-        setIsFadingOut(false);
-        setTimeout(() => startAuto(), 150);
-        return;
-      }
-      // Pin autoProg so max() doesn't collapse on direction change
-      autoProg.set(progress.get());
-      progress.set(Math.max(autoProg.get(), v));
-      return;
-    }
-
+    // ── User is actively scrolling: kill auto-play ──────────────────────
     if (autoCtrlRef.current) {
       autoCtrlRef.current.stop();
       autoCtrlRef.current = null;
-      autoProg.set(progress.get());
+
+      // Teleport scroll to match where auto stopped.
+      // After this, scrollYProgress will naturally equal progress.get()
+      // so the handoff is instantaneous and perfectly smooth.
+      const currentP = progress.get();
+      const targetTop = progressToScrollTop(currentP);
+      syncingScrollRef.current = true;
+      window.scrollTo({ top: targetTop, behavior: "instant" });
+      prevScrollRef.current = currentP;
+      // Allow one rAF for the scroll event from scrollTo to fire & be ignored,
+      // then re-enable normal handling
+      requestAnimationFrame(() => {
+        syncingScrollRef.current = false;
+      });
+      return;
     }
 
-    // ─── Direct write — no intermediate MotionValue hop
-    progress.set(Math.max(autoProg.get(), v));
+    // ── Normal scroll handling ───────────────────────────────────────────
+    if (goingUp && v < 0.02) {
+      // Scrolled back to very top — restart auto from zero
+      progress.set(0);
+      scRef.current = { tag: false, title: false, sub: false };
+      setSc({ tag: false, title: false, sub: false });
+      setIsFadingOut(false);
+      setTimeout(() => startAuto(), 150);
+      return;
+    }
+
+    progress.set(v);
+    updateSc(v);
 
     if (v >= 0.99) { finish(); return; }
 
-    // ─── Threshold check: only setState when a boundary is crossed
-    // (at most 3 times per intro, never during active scrolling)
-    const cur = scRef.current;
-    const nextTag   = v > 0.02;
-    const nextTitle = v > 0.03;
-    const nextSub   = v > 0.07;
-    if (cur.tag !== nextTag || cur.title !== nextTitle || cur.sub !== nextSub) {
-      const next = { tag: nextTag, title: nextTitle, sub: nextSub };
-      scRef.current = next;
-      setSc(next);
-    }
-
+    // Resume auto after 1.2s idle
     idleTimerRef.current = setTimeout(() => {
       idleTimerRef.current = null;
       if (!doneRef.current && !autoCtrlRef.current) {
