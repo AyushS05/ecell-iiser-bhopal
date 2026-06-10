@@ -36,9 +36,6 @@ function ScrambleText({
       return;
     }
 
-    // FIX 3: Throttle ScrambleText RAF to ~30fps instead of 60fps to cut CPU usage.
-    // Using a frame-skip counter rather than performance.now() deltas to
-    // avoid the extra math on every frame.
     let elapsed = 0;
     let lastTime = performance.now();
     let animId: number;
@@ -47,13 +44,12 @@ function ScrambleText({
 
     const startId = requestAnimationFrame(() => {
       const frame = (time: number) => {
-        // Skip every other frame (~30 fps cap) to reduce layout thrash
+        // ~30fps cap — halve DOM write frequency
         frameSkip++;
         if (frameSkip % 2 !== 0) {
           animId = requestAnimationFrame(frame);
           return;
         }
-
         const delta = time - lastTime;
         if (delta > speed) {
           elapsed += delta;
@@ -86,8 +82,6 @@ function ScrambleText({
 }
 
 // ─── RING LABEL ───────────────────────────────────────────────────────────────
-// FIX 3: Memoize RingLabel — it only changes when dismantle opacity changes,
-// but was previously re-running on every parent SVG render.
 const RingLabel = memo(function RingLabel({
   cx, cy, labelX, labelY,
   label, sublabel, opacity,
@@ -113,7 +107,6 @@ const RingLabel = memo(function RingLabel({
         stroke="rgba(232,160,32,0.3)" strokeWidth="0.7" strokeDasharray="3 2.5"
       />
       <circle cx={lineToX} cy={lineToY} r="2" fill="#E8A020" opacity="0.6" />
-      {/* Backdrop */}
       <rect
         x={boxX} y={labelY - 18}
         width={boxW} height={30}
@@ -154,10 +147,6 @@ const Reactor = memo(function Reactor({
   tiltY:     MotionValue<number>;
   dismantle: MotionValue<number>;
 }) {
-  // FIX 2: Speed up the early swirl — compress ring rotation to feel snappier
-  // in the 0–0.25 window by using a custom ease-like input mapping.
-  // The rings now reach 60% of their final rotation by progress=0.3
-  // (previously linear all the way to 1.0).
   const ring1Rot = useTransform(progress,
     [0,    0.08,  0.20,  0.40,  1.0],
     [0,    90,    200,   360,   540]
@@ -171,10 +160,10 @@ const Reactor = memo(function Reactor({
     [0,    60,    130,   220,   300]
   );
 
-  const corePow  = useTransform(progress, [0, 0.07], [0, 1]); // FIX 2: core powers up faster
+  const corePow  = useTransform(progress, [0, 0.07], [0, 1]);
   const irisOff  = useTransform(progress, [0.75, 0.94], [250, 392]);
-  
-  const flashSc  = useTransform(progress, [0.95, 0.99], [0, 600]); 
+
+  const flashSc  = useTransform(progress, [0.95, 0.99], [0, 600]);
   const flashOp  = useTransform(progress, [0.95, 0.98], [0, 1]);
 
   const r1dx      = useTransform(dismantle, [0, 1], [0, -103]);
@@ -204,7 +193,6 @@ const Reactor = memo(function Reactor({
         width: "100%", height: "100%", position: "relative",
         rotateX: tiltX, rotateY: tiltY,
         transformStyle: "preserve-3d",
-        // FIX 3: Hint to the browser that this element will be composited
         willChange: "transform",
       }}
     >
@@ -216,7 +204,6 @@ const Reactor = memo(function Reactor({
           filter: "blur(88px)",
           opacity: glowOp,
           pointerEvents: "none", zIndex: 0,
-          // FIX 3: Promote glow to its own compositor layer
           willChange: "opacity",
         }}
       />
@@ -234,9 +221,7 @@ const Reactor = memo(function Reactor({
 
       <svg
         viewBox="0 0 500 500"
-        style={{
-          width: "100%", height: "100%", overflow: "visible",
-        }}
+        style={{ width: "100%", height: "100%", overflow: "visible" }}
       >
         <defs>
           <radialGradient id="ecell-plasma" cx="50%" cy="50%" r="50%">
@@ -272,13 +257,7 @@ const Reactor = memo(function Reactor({
         />
 
         <motion.g style={{ x: r1dx, y: r1dy }}>
-          <motion.g
-            style={{
-              rotate: ring1Rot,
-              transformOrigin: "250px 250px",
-              opacity: ringBaseOp,
-            }}
-          >
+          <motion.g style={{ rotate: ring1Rot, transformOrigin: "250px 250px", opacity: ringBaseOp }}>
             <circle cx="250" cy="250" r="180"
               stroke="#E8A020" strokeWidth="2.5" strokeDasharray="7 15"
               fill="none" opacity="0.65"
@@ -302,13 +281,7 @@ const Reactor = memo(function Reactor({
         </motion.g>
 
         <motion.g style={{ x: r2dx, y: r2dy }}>
-          <motion.g
-            style={{
-              rotate: ring2Rot,
-              transformOrigin: "250px 250px",
-              opacity: ringBaseOp,
-            }}
-          >
+          <motion.g style={{ rotate: ring2Rot, transformOrigin: "250px 250px", opacity: ringBaseOp }}>
             <circle cx="250" cy="250" r="142"
               stroke="#0c0b09" strokeWidth="33" fill="none"
             />
@@ -339,13 +312,7 @@ const Reactor = memo(function Reactor({
         </motion.g>
 
         <motion.g style={{ x: r3dx, y: r3dy }}>
-          <motion.g
-            style={{
-              rotate: ring3Rot,
-              transformOrigin: "250px 250px",
-              opacity: ringBaseOp,
-            }}
-          >
+          <motion.g style={{ rotate: ring3Rot, transformOrigin: "250px 250px", opacity: ringBaseOp }}>
             <circle cx="250" cy="250" r="97"
               stroke="#7a3e00" strokeWidth="13" fill="none" opacity="0.5"
             />
@@ -432,17 +399,23 @@ function ScrollNudge({ opacity }: { opacity: MotionValue<number> }) {
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 export default function ScrollIntro() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const autoCtrlRef  = useRef<ReturnType<typeof animate> | null>(null);
+  const containerRef  = useRef<HTMLDivElement>(null);
+  const autoCtrlRef   = useRef<ReturnType<typeof animate> | null>(null);
   const prevScrollRef = useRef(0);
-  const doneRef      = useRef(hasPlayedIntro);
-  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const doneRef       = useRef(hasPlayedIntro);
+  const idleTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ─── PERF: sc as a ref — threshold crossings are rare (3 total).
+  // Keeping this out of state means the progress listener never triggers
+  // a React re-render during scroll. We only call setSc when a threshold
+  // is actually crossed (≤3 times per intro play).
+  const scRef = useRef({ tag: false, title: false, sub: false });
+  const [sc, setSc] = useState({ tag: false, title: false, sub: false });
 
   const { setIntroActive } = useIntroControl();
 
   const [isMounted,   setIsMounted]   = useState(!hasPlayedIntro);
   const [isFadingOut, setIsFadingOut] = useState(hasPlayedIntro);
-  const [sc, setSc] = useState({ tag: false, title: false, sub: false });
 
   useEffect(() => {
     if (hasPlayedIntro) {
@@ -457,24 +430,21 @@ export default function ScrollIntro() {
     offset: ["start start", "end end"],
   });
 
-  const scrollProg = useMotionValue(0);
-  const autoProg   = useMotionValue(0);
-  const progress   = useMotionValue(0);
+  // ─── PERF: Only TWO motion values now (was three).
+  // scrollProg is eliminated entirely. progress is updated directly
+  // in the scroll handler and the autoProg listener — one fewer
+  // subscriber chain firing on every scroll tick.
+  const autoProg = useMotionValue(0);
+  const progress = useMotionValue(0);
 
-  // FIX 3: Derive progress inline via useTransform instead of a manual
-  // sync listener. useTransform is handled by Framer Motion's internal
-  // scheduler (no JS event overhead on every frame).
-  // We still need the imperative sync for the "max" logic, but we
-  // batch it by doing it only in the scroll handler and auto animation,
-  // not via two separate "change" listeners.
+  // autoProg listener: only fires during the auto-play animation
   useEffect(() => {
-    const sync = () => {
-      progress.set(Math.max(autoProg.get(), scrollProg.get()));
-    };
-    const ua = autoProg.on("change", sync);
-    const us = scrollProg.on("change", sync);
-    return () => { ua(); us(); };
-  }, [autoProg, scrollProg, progress]);
+    const ua = autoProg.on("change", (v) => {
+      // During auto-play, scrollYProgress is 0, so max is always v
+      progress.set(Math.max(v, scrollYProgress.get()));
+    });
+    return ua;
+  }, [autoProg, progress, scrollYProgress]);
 
   const finish = useCallback(() => {
     if (doneRef.current) return;
@@ -514,6 +484,11 @@ export default function ScrollIntro() {
     return () => clearTimeout(t);
   }, [startAuto, isMounted]);
 
+  // ─── PERF: The hot scroll handler — runs at 60fps during scroll.
+  // Every line here is load-bearing. Changes:
+  //  1. No scrollProg.set() — we write to progress directly (one fewer dispatch)
+  //  2. sc threshold check uses ref comparison, never calls setSc unless
+  //     a threshold boundary is actually crossed
   useMotionValueEvent(scrollYProgress, "change", (v) => {
     if (!isMounted || doneRef.current) return;
 
@@ -531,35 +506,43 @@ export default function ScrollIntro() {
       autoCtrlRef.current = null;
 
       if (v < 0.02) {
-        // FIX 1 (partial): Reset both motion values cleanly when returning to top
         autoProg.set(0);
-        scrollProg.set(0);
         progress.set(0);
+        // Reset sc ref and state
+        scRef.current = { tag: false, title: false, sub: false };
         setSc({ tag: false, title: false, sub: false });
         setIsFadingOut(false);
         setTimeout(() => startAuto(), 150);
         return;
       }
-      // FIX 1: When user scrolls up mid-sequence, match autoProg to current
-      // progress so the max() doesn't snap backward when we zero autoProg.
+      // Pin autoProg so max() doesn't collapse on direction change
       autoProg.set(progress.get());
-      scrollProg.set(v);
+      progress.set(Math.max(autoProg.get(), v));
       return;
     }
 
-    // FIX 1: When the user grabs scroll while auto is running, stop the auto
-    // animation but pin autoProg to the current progress value — NOT zero —
-    // so the max(autoProg, scrollProg) doesn't cause a backward jump.
     if (autoCtrlRef.current) {
       autoCtrlRef.current.stop();
       autoCtrlRef.current = null;
-      // Pin autoProg to wherever progress currently is, not 0
       autoProg.set(progress.get());
     }
 
-    scrollProg.set(v);
+    // ─── Direct write — no intermediate MotionValue hop
+    progress.set(Math.max(autoProg.get(), v));
 
     if (v >= 0.99) { finish(); return; }
+
+    // ─── Threshold check: only setState when a boundary is crossed
+    // (at most 3 times per intro, never during active scrolling)
+    const cur = scRef.current;
+    const nextTag   = v > 0.02;
+    const nextTitle = v > 0.03;
+    const nextSub   = v > 0.07;
+    if (cur.tag !== nextTag || cur.title !== nextTitle || cur.sub !== nextSub) {
+      const next = { tag: nextTag, title: nextTitle, sub: nextSub };
+      scRef.current = next;
+      setSc(next);
+    }
 
     idleTimerRef.current = setTimeout(() => {
       idleTimerRef.current = null;
@@ -625,10 +608,6 @@ export default function ScrollIntro() {
     ["-50%", "-50%", "-34%", "-44%", "-50%"]
   );
 
-  // FIX 2: Compress text appearance into a tighter early window so E-Cell
-  // logo and the reactor swirl feel snappy rather than sluggish.
-  // Old ranges: tag [0.03,0.10], title [0.06,0.16], sub [0.12,0.22]
-  // New ranges: appear ~2× faster
   const tagOpacity   = useTransform(progress, [0.02, 0.07, 0.78, 0.88], [0, 1, 1, 0]);
   const tagY         = useTransform(progress, [0.02, 0.07], [10, 0]);
   const titleOpacity = useTransform(progress, [0.03, 0.10, 0.76, 0.86], [0, 1, 1, 0]);
@@ -642,15 +621,6 @@ export default function ScrollIntro() {
   const scanOp  = useTransform(progress, [0.06, 0.14, 0.88, 0.94], [0, 1, 1, 0]);
   const nudgeOp = useTransform(progress, [0, 0.05, 0.18], [1, 1, 0]);
 
-  useMotionValueEvent(progress, "change", (v) => {
-    setSc((prev) => {
-      // FIX 2: Match the new tighter thresholds
-      const n = { tag: v > 0.02, title: v > 0.03, sub: v > 0.07 };
-      if (prev.tag === n.tag && prev.title === n.title && prev.sub === n.sub) return prev;
-      return n;
-    });
-  });
-
   if (!isMounted) return <div ref={containerRef} style={{ display: "none" }} aria-hidden="true" />;
 
   return (
@@ -661,10 +631,6 @@ export default function ScrollIntro() {
           4%   { opacity: 0.5; }
           96%  { opacity: 0.5; }
           100% { top: 100vh; opacity: 0; }
-        }
-        @keyframes amber-pulse {
-          0%, 100% { opacity: 1; }
-          50%       { opacity: 0.4; }
         }
         .ecell-scanline {
           position: absolute; left: 0; right: 0; height: 1.5px;
@@ -730,12 +696,10 @@ export default function ScrollIntro() {
               translateY: "-50%",
               rotateZ: reactorRotZ,
               scale: reactorScale,
-              width: "90vmin",  
-              height: "90vmin", 
+              width: "90vmin",
+              height: "90vmin",
               zIndex: 3,
               transformStyle: "preserve-3d",
-              // FIX 3: Promote to compositor layer up front — avoids
-              // promotion cost mid-animation which causes a jank spike.
               willChange: "transform",
             }}
           >
