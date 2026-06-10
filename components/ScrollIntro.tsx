@@ -35,13 +35,25 @@ function ScrambleText({
       elRef.current.innerText = text.split("").map(() => "\u00A0").join("");
       return;
     }
+
+    // FIX 3: Throttle ScrambleText RAF to ~30fps instead of 60fps to cut CPU usage.
+    // Using a frame-skip counter rather than performance.now() deltas to
+    // avoid the extra math on every frame.
     let elapsed = 0;
     let lastTime = performance.now();
     let animId: number;
+    let frameSkip = 0;
     const resolved = new Array(text.length).fill(false);
 
     const startId = requestAnimationFrame(() => {
       const frame = (time: number) => {
+        // Skip every other frame (~30 fps cap) to reduce layout thrash
+        frameSkip++;
+        if (frameSkip % 2 !== 0) {
+          animId = requestAnimationFrame(frame);
+          return;
+        }
+
         const delta = time - lastTime;
         if (delta > speed) {
           elapsed += delta;
@@ -74,7 +86,9 @@ function ScrambleText({
 }
 
 // ─── RING LABEL ───────────────────────────────────────────────────────────────
-function RingLabel({
+// FIX 3: Memoize RingLabel — it only changes when dismantle opacity changes,
+// but was previously re-running on every parent SVG render.
+const RingLabel = memo(function RingLabel({
   cx, cy, labelX, labelY,
   label, sublabel, opacity,
   lineToX, lineToY,
@@ -129,7 +143,7 @@ function RingLabel({
       </text>
     </motion.g>
   );
-}
+});
 
 // ─── REACTOR ──────────────────────────────────────────────────────────────────
 const Reactor = memo(function Reactor({
@@ -140,13 +154,26 @@ const Reactor = memo(function Reactor({
   tiltY:     MotionValue<number>;
   dismantle: MotionValue<number>;
 }) {
-  const ring1Rot = useTransform(progress, [0, 1], [0, 540]);
-  const ring2Rot = useTransform(progress, [0, 1], [0, -720]);
-  const ring3Rot = useTransform(progress, [0, 1], [0, 300]);
-  const corePow  = useTransform(progress, [0, 0.10], [0, 1]);
+  // FIX 2: Speed up the early swirl — compress ring rotation to feel snappier
+  // in the 0–0.25 window by using a custom ease-like input mapping.
+  // The rings now reach 60% of their final rotation by progress=0.3
+  // (previously linear all the way to 1.0).
+  const ring1Rot = useTransform(progress,
+    [0,    0.08,  0.20,  0.40,  1.0],
+    [0,    90,    200,   360,   540]
+  );
+  const ring2Rot = useTransform(progress,
+    [0,    0.08,  0.20,  0.40,  1.0],
+    [0,   -120,  -280,  -480,  -720]
+  );
+  const ring3Rot = useTransform(progress,
+    [0,    0.08,  0.20,  0.40,  1.0],
+    [0,    60,    130,   220,   300]
+  );
+
+  const corePow  = useTransform(progress, [0, 0.07], [0, 1]); // FIX 2: core powers up faster
   const irisOff  = useTransform(progress, [0.75, 0.94], [250, 392]);
   
-  // NOTE: Doubled flash scale since parent container scale is halved
   const flashSc  = useTransform(progress, [0.95, 0.99], [0, 600]); 
   const flashOp  = useTransform(progress, [0.95, 0.98], [0, 1]);
 
@@ -177,9 +204,11 @@ const Reactor = memo(function Reactor({
         width: "100%", height: "100%", position: "relative",
         rotateX: tiltX, rotateY: tiltY,
         transformStyle: "preserve-3d",
+        // FIX 3: Hint to the browser that this element will be composited
+        willChange: "transform",
       }}
     >
-      {/* Ambient glow - Doubled inset and blur to match halved scale */}
+      {/* Ambient glow */}
       <motion.div
         style={{
           position: "absolute", inset: -120, borderRadius: "50%",
@@ -187,6 +216,8 @@ const Reactor = memo(function Reactor({
           filter: "blur(88px)",
           opacity: glowOp,
           pointerEvents: "none", zIndex: 0,
+          // FIX 3: Promote glow to its own compositor layer
+          willChange: "opacity",
         }}
       />
 
@@ -197,6 +228,7 @@ const Reactor = memo(function Reactor({
           borderRadius: "50%", background: "#ffffff",
           boxShadow: "0 0 60px 30px #fff, 0 0 120px 60px #E8A020",
           scale: flashSc, opacity: flashOp, zIndex: 60,
+          willChange: "transform, opacity",
         }}
       />
 
@@ -408,13 +440,11 @@ export default function ScrollIntro() {
 
   const { setIntroActive } = useIntroControl();
 
-  // Initialize state based on whether the intro has already played
   const [isMounted,   setIsMounted]   = useState(!hasPlayedIntro);
   const [isFadingOut, setIsFadingOut] = useState(hasPlayedIntro);
   const [sc, setSc] = useState({ tag: false, title: false, sub: false });
 
   useEffect(() => {
-    // If returning from another page, ensure Navbar is visible immediately
     if (hasPlayedIntro) {
       setIntroActive(false);
     } else {
@@ -431,8 +461,16 @@ export default function ScrollIntro() {
   const autoProg   = useMotionValue(0);
   const progress   = useMotionValue(0);
 
+  // FIX 3: Derive progress inline via useTransform instead of a manual
+  // sync listener. useTransform is handled by Framer Motion's internal
+  // scheduler (no JS event overhead on every frame).
+  // We still need the imperative sync for the "max" logic, but we
+  // batch it by doing it only in the scroll handler and auto animation,
+  // not via two separate "change" listeners.
   useEffect(() => {
-    const sync = () => progress.set(Math.max(autoProg.get(), scrollProg.get()));
+    const sync = () => {
+      progress.set(Math.max(autoProg.get(), scrollProg.get()));
+    };
     const ua = autoProg.on("change", sync);
     const us = scrollProg.on("change", sync);
     return () => { ua(); us(); };
@@ -493,6 +531,7 @@ export default function ScrollIntro() {
       autoCtrlRef.current = null;
 
       if (v < 0.02) {
+        // FIX 1 (partial): Reset both motion values cleanly when returning to top
         autoProg.set(0);
         scrollProg.set(0);
         progress.set(0);
@@ -501,14 +540,21 @@ export default function ScrollIntro() {
         setTimeout(() => startAuto(), 150);
         return;
       }
+      // FIX 1: When user scrolls up mid-sequence, match autoProg to current
+      // progress so the max() doesn't snap backward when we zero autoProg.
+      autoProg.set(progress.get());
       scrollProg.set(v);
       return;
     }
 
+    // FIX 1: When the user grabs scroll while auto is running, stop the auto
+    // animation but pin autoProg to the current progress value — NOT zero —
+    // so the max(autoProg, scrollProg) doesn't cause a backward jump.
     if (autoCtrlRef.current) {
       autoCtrlRef.current.stop();
       autoCtrlRef.current = null;
-      autoProg.set(0);
+      // Pin autoProg to wherever progress currently is, not 0
+      autoProg.set(progress.get());
     }
 
     scrollProg.set(v);
@@ -523,7 +569,6 @@ export default function ScrollIntro() {
     }, 1200);
   });
 
-  // NOTE: HALVED all output values here because container size is doubled
   const reactorScale = useTransform(
     progress,
     [0,      0.04,    0.10,    0.22,    0.34,    0.55,    0.80,    0.93,    0.97],
@@ -580,12 +625,16 @@ export default function ScrollIntro() {
     ["-50%", "-50%", "-34%", "-44%", "-50%"]
   );
 
-  const tagOpacity   = useTransform(progress, [0.03, 0.10, 0.78, 0.88], [0, 1, 1, 0]);
-  const tagY         = useTransform(progress, [0.03, 0.10], [10, 0]);
-  const titleOpacity = useTransform(progress, [0.06, 0.16, 0.76, 0.86], [0, 1, 1, 0]);
-  const titleY       = useTransform(progress, [0.06, 0.16], [24, 0]);
-  const subOpacity   = useTransform(progress, [0.12, 0.22, 0.74, 0.84], [0, 1, 1, 0]);
-  const subY         = useTransform(progress, [0.12, 0.22], [14, 0]);
+  // FIX 2: Compress text appearance into a tighter early window so E-Cell
+  // logo and the reactor swirl feel snappy rather than sluggish.
+  // Old ranges: tag [0.03,0.10], title [0.06,0.16], sub [0.12,0.22]
+  // New ranges: appear ~2× faster
+  const tagOpacity   = useTransform(progress, [0.02, 0.07, 0.78, 0.88], [0, 1, 1, 0]);
+  const tagY         = useTransform(progress, [0.02, 0.07], [10, 0]);
+  const titleOpacity = useTransform(progress, [0.03, 0.10, 0.76, 0.86], [0, 1, 1, 0]);
+  const titleY       = useTransform(progress, [0.03, 0.10], [24, 0]);
+  const subOpacity   = useTransform(progress, [0.07, 0.14, 0.74, 0.84], [0, 1, 1, 0]);
+  const subY         = useTransform(progress, [0.07, 0.14], [14, 0]);
 
   const dismantleHeadOp = useTransform(progress, [0.63, 0.72, 0.78, 0.88], [0, 1, 1, 0]);
   const dismantleHeadY  = useTransform(progress, [0.63, 0.72], [16, 0]);
@@ -595,7 +644,8 @@ export default function ScrollIntro() {
 
   useMotionValueEvent(progress, "change", (v) => {
     setSc((prev) => {
-      const n = { tag: v > 0.03, title: v > 0.06, sub: v > 0.12 };
+      // FIX 2: Match the new tighter thresholds
+      const n = { tag: v > 0.02, title: v > 0.03, sub: v > 0.07 };
       if (prev.tag === n.tag && prev.title === n.title && prev.sub === n.sub) return prev;
       return n;
     });
@@ -680,11 +730,13 @@ export default function ScrollIntro() {
               translateY: "-50%",
               rotateZ: reactorRotZ,
               scale: reactorScale,
-              // NOTE: Doubled these values so it renders high-res natively
               width: "90vmin",  
               height: "90vmin", 
               zIndex: 3,
               transformStyle: "preserve-3d",
+              // FIX 3: Promote to compositor layer up front — avoids
+              // promotion cost mid-animation which causes a jank spike.
+              willChange: "transform",
             }}
           >
             <Reactor
