@@ -337,13 +337,13 @@ export default function Hero() {
           <div className="overflow-hidden w-full">
             <motion.h2 variants={line}
               style={{ fontFamily:"'Bebas Neue', sans-serif", lineHeight:0.92, letterSpacing:"0.01em", color:"#ffffff" }}
-              className="text-[clamp(3.5rem,8.5vw,8rem)] xl:text-[8.5rem] block break-words w-full"
+              className="text-[clamp(2.8rem,6.2vw,6rem)] xl:text-[6.5rem] block w-full whitespace-nowrap"
             >TURN</motion.h2>
           </div>
           <div className="overflow-hidden w-full">
             <motion.h2 variants={line}
               style={{ fontFamily:"'Bebas Neue', sans-serif", lineHeight:0.92, letterSpacing:"0.01em" }}
-              className="text-[clamp(3.5rem,8.5vw,8rem)] xl:text-[8.5rem] block break-words w-full"
+              className="text-[clamp(2.8rem,6.2vw,6rem)] xl:text-[6.5rem] block w-full whitespace-nowrap"
             >
               <span style={{ color:"#e8a020" }}>BREAK</span>
               <span style={{ color:"#ffffff" }}>THROUGHS</span>
@@ -352,7 +352,7 @@ export default function Hero() {
           <div className="overflow-hidden w-full">
             <motion.h2 variants={line}
               style={{ fontFamily:"'Bebas Neue', sans-serif", lineHeight:0.92, letterSpacing:"0.01em", color:"#ffffff" }}
-              className="text-[clamp(3.5rem,8.5vw,8rem)] xl:text-[8.5rem] block break-words w-full"
+              className="text-[clamp(2.8rem,6.2vw,6rem)] xl:text-[6.5rem] block w-full whitespace-nowrap"
             >INTO BUSI<span style={{ color:"#e8a020" }}>NESSES.</span></motion.h2>
           </div>
 
