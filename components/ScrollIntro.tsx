@@ -523,7 +523,7 @@ export default function ScrollIntro() {
 
   useEffect(() => {
     if (!isMounted || doneRef.current) return;
-    const t = setTimeout(() => startAuto(), 150);
+    const t = setTimeout(() => startAuto(), 600);
     return () => clearTimeout(t);
   }, [startAuto, isMounted]);
 
@@ -607,7 +607,7 @@ export default function ScrollIntro() {
   const tyMobile = useTransform(
     progress,
     [0,      0.10,   0.36,   0.65,   0.90],
-    ["-65%", "-65%", "-50%", "-58%", "-65%"]
+    ["-20%", "-20%", "-10%", "-15%", "-20%"]
   );
 
   const reactorRotY = useTransform(
@@ -764,8 +764,8 @@ export default function ScrollIntro() {
             style={{
               position: "absolute",
               left: isMobile ? "clamp(1.5rem, 5vw, 2.5rem)" : "clamp(2rem, 4vw, 4.5rem)",
-              top: isMobile ? "7%" : "50%",
-              transform: "translateY(-50%)",
+              top: isMobile ? "3rem" : "50%",
+              transform: isMobile ? "none" : "translateY(-50%)",
               zIndex: 5, pointerEvents: "none",
               display: "flex", flexDirection: "column",
               maxWidth: isMobile ? "90vw" : "min(400px, 38vw)",
@@ -856,9 +856,10 @@ export default function ScrollIntro() {
           <motion.div
             style={{
               position: "absolute",
-              bottom: isMobile ? "1.5rem" : "2.5rem",
+              bottom: isMobile ? "5rem" : "2.5rem",
               right: isMobile ? "1.5rem" : "2.5rem",
-              opacity: isMobile ? 1 : tagOpacity, zIndex: 6, pointerEvents: "none",
+              opacity: isMobile ? 0.85 : tagOpacity,
+              zIndex: 6, pointerEvents: "none",
               textAlign: "right",
             }}
           >
