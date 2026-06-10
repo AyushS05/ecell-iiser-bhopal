@@ -405,10 +405,6 @@ export default function ScrollIntro() {
   const doneRef       = useRef(hasPlayedIntro);
   const idleTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ─── PERF: sc as a ref — threshold crossings are rare (3 total).
-  // Keeping this out of state means the progress listener never triggers
-  // a React re-render during scroll. We only call setSc when a threshold
-  // is actually crossed (≤3 times per intro play).
   const scRef = useRef({ tag: false, title: false, sub: false });
   const [sc, setSc] = useState({ tag: false, title: false, sub: false });
 
@@ -416,6 +412,15 @@ export default function ScrollIntro() {
 
   const [isMounted,   setIsMounted]   = useState(!hasPlayedIntro);
   const [isFadingOut, setIsFadingOut] = useState(hasPlayedIntro);
+  const [isMobile, setIsMobile]       = useState(false);
+
+  // Responsive check
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile(); // Check on mount
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   useEffect(() => {
     if (hasPlayedIntro) {
@@ -430,29 +435,16 @@ export default function ScrollIntro() {
     offset: ["start start", "end end"],
   });
 
-  // progress is the single source of truth for all animation.
-  // During auto-play:  autoProg drives progress directly.
-  // During scroll:     scrollYProgress drives progress directly.
-  // Handoff:           we sync the page scroll position to match
-  //                    where auto stopped — eliminating the dead zone
-  //                    where max(auto, scroll) would freeze the reactor.
   const autoProg = useMotionValue(0);
   const progress = useMotionValue(0);
-
-  // Flag: true while we are programmatically scrolling to sync position.
-  // During that window we ignore scrollYProgress events so they don't
-  // fight the window.scrollTo we just issued.
   const syncingScrollRef = useRef(false);
 
-  // Helper: convert a progress value [0,1] → page scroll offset in px.
-  // The container is 900vh tall; scrollYProgress = scrollTop / (scrollHeight - vh).
   const progressToScrollTop = useCallback((p: number) => {
     if (!containerRef.current) return 0;
     const scrollable = containerRef.current.scrollHeight - window.innerHeight;
     return p * scrollable;
   }, []);
 
-  // Helper: update sc state only when a threshold boundary is crossed.
   const updateSc = useCallback((p: number) => {
     const cur = scRef.current;
     const nTag   = p > 0.02;
@@ -465,9 +457,6 @@ export default function ScrollIntro() {
     }
   }, []);
 
-  // autoProg listener — runs during auto-play only.
-  // Drives progress directly; scroll position is irrelevant here because
-  // the page hasn't been scrolled yet (still at top).
   useEffect(() => {
     const ua = autoProg.on("change", (v) => {
       progress.set(v);
@@ -490,14 +479,12 @@ export default function ScrollIntro() {
     if (doneRef.current || autoCtrlRef.current) return;
     const remaining = 1 - from;
     if (remaining <= 0) { finish(); return; }
-    // Teleport scroll to top so scrollYProgress doesn't fight autoProg.
-    // The syncing flag prevents the resulting scroll event from being processed.
     syncingScrollRef.current = true;
     window.scrollTo({ top: 0, behavior: "instant" });
     requestAnimationFrame(() => { syncingScrollRef.current = false; });
     autoProg.set(from);
     autoCtrlRef.current = animate(autoProg, 1, {
-      duration: 18 * remaining,
+      duration: 10 * remaining, 
       ease: "linear",
       onComplete: finish,
     });
@@ -506,11 +493,10 @@ export default function ScrollIntro() {
   const startAuto = useCallback(() => {
     if (doneRef.current) return;
     autoCtrlRef.current?.stop();
-    // Reset scroll to top before auto begins so scrollYProgress = 0
     window.scrollTo({ top: 0, behavior: "instant" });
     autoProg.set(0);
     autoCtrlRef.current = animate(autoProg, 1, {
-      duration: 18,
+      duration: 10, 
       ease: "linear",
       onComplete: finish,
     });
@@ -522,14 +508,8 @@ export default function ScrollIntro() {
     return () => clearTimeout(t);
   }, [startAuto, isMounted]);
 
-  // Hot scroll handler — runs at 60fps during scroll.
-  // Key insight: when the user first interrupts auto, we teleport the page
-  // scroll position to match progress.get(). From that moment, scrollYProgress
-  // and progress are in perfect sync — no dead zone, no stickiness.
   useMotionValueEvent(scrollYProgress, "change", (v) => {
     if (!isMounted || doneRef.current) return;
-
-    // While we're doing the sync scroll, ignore incoming events
     if (syncingScrollRef.current) return;
 
     const prev    = prevScrollRef.current;
@@ -541,30 +521,21 @@ export default function ScrollIntro() {
       idleTimerRef.current = null;
     }
 
-    // ── User is actively scrolling: kill auto-play ──────────────────────
     if (autoCtrlRef.current) {
       autoCtrlRef.current.stop();
       autoCtrlRef.current = null;
-
-      // Teleport scroll to match where auto stopped.
-      // After this, scrollYProgress will naturally equal progress.get()
-      // so the handoff is instantaneous and perfectly smooth.
       const currentP = progress.get();
       const targetTop = progressToScrollTop(currentP);
       syncingScrollRef.current = true;
       window.scrollTo({ top: targetTop, behavior: "instant" });
       prevScrollRef.current = currentP;
-      // Allow one rAF for the scroll event from scrollTo to fire & be ignored,
-      // then re-enable normal handling
       requestAnimationFrame(() => {
         syncingScrollRef.current = false;
       });
       return;
     }
 
-    // ── Normal scroll handling ───────────────────────────────────────────
     if (goingUp && v < 0.02) {
-      // Scrolled back to very top — restart auto from zero
       progress.set(0);
       scRef.current = { tag: false, title: false, sub: false };
       setSc({ tag: false, title: false, sub: false });
@@ -578,7 +549,6 @@ export default function ScrollIntro() {
 
     if (v >= 0.99) { finish(); return; }
 
-    // Resume auto after 1.2s idle
     idleTimerRef.current = setTimeout(() => {
       idleTimerRef.current = null;
       if (!doneRef.current && !autoCtrlRef.current) {
@@ -587,22 +557,54 @@ export default function ScrollIntro() {
     }, 1200);
   });
 
-  const reactorScale = useTransform(
+  // ─── RESPONSIVE TRANSFORMS ────────────────────────────────────────────────
+  
+  const scaleDesktop = useTransform(
     progress,
     [0,      0.04,    0.10,    0.22,    0.34,    0.55,    0.80,    0.93,    0.97],
     [0.5,    0.53,    0.61,    0.76,    0.89,    0.95,    0.865,   0.755,   0.265]
   );
+  
+  const scaleMobile = useTransform(
+    progress,
+    [0,      0.04,    0.10,    0.22,    0.34,    0.55,    0.80,    0.93,    0.97],
+    [0.45,   0.48,    0.55,    0.65,    0.72,    0.78,    0.72,    0.60,    0.25]
+  );
+
+  const txDesktop = useTransform(
+    progress,
+    [0,      0.10,   0.36,   0.65,   0.90],
+    ["-50%", "-50%", "-34%", "-44%", "-50%"]
+  );
+
+  const txMobile = useTransform(
+    progress,
+    [0,      0.10,   0.36,   0.65,   0.90],
+    ["-50%", "-50%", "-50%", "-50%", "-50%"] // Prevent shifting off-screen
+  );
+
+  const tyDesktop = useTransform(progress, [0, 1], ["-50%", "-50%"]); // Static vertical center
+  
+  const tyMobile = useTransform(
+    progress,
+    [0,      0.10,   0.36,   0.65,   0.90],
+    ["-50%", "-50%", "-28%", "-38%", "-50%"] // Shift down to avoid text overlap
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────
 
   const reactorRotY = useTransform(
     progress,
-    [0,   0.10,  0.24,  0.40,  0.58,  0.72,  0.90, 1.0],
+    [0,   0.05,  0.15,  0.25,  0.40,  0.60,  0.85, 1.0], 
     [0,    0,    -9,   -42,   -12,    5,     1,    0]
   );
+  
   const reactorRotX = useTransform(
     progress,
-    [0,   0.10,  0.24,  0.40,  0.58,  0.72,  0.90, 1.0],
+    [0,   0.05,  0.15,  0.25,  0.40,  0.60,  0.85, 1.0], 
     [0,    0,    14,    28,     4,    -4,     1,    0]
   );
+
   const reactorRotZ = useTransform(
     progress,
     [0,  0.22,  0.42,  0.68,  0.90],
@@ -635,12 +637,6 @@ export default function ScrollIntro() {
     progress,
     [0.62, 0.74, 0.80, 0.90],
     [0,    1,    1,    0]
-  );
-
-  const reactorTX = useTransform(
-    progress,
-    [0,      0.10,   0.36,   0.65,   0.90],
-    ["-50%", "-50%", "-34%", "-44%", "-50%"]
   );
 
   const tagOpacity   = useTransform(progress, [0.02, 0.07, 0.78, 0.88], [0, 1, 1, 0]);
@@ -727,10 +723,10 @@ export default function ScrollIntro() {
               position: "absolute",
               left: "50%",
               top: "50%",
-              translateX: reactorTX,
-              translateY: "-50%",
+              translateX: isMobile ? txMobile : txDesktop,
+              translateY: isMobile ? tyMobile : tyDesktop,
               rotateZ: reactorRotZ,
-              scale: reactorScale,
+              scale: isMobile ? scaleMobile : scaleDesktop,
               width: "90vmin",
               height: "90vmin",
               zIndex: 3,
@@ -750,12 +746,12 @@ export default function ScrollIntro() {
           <div
             style={{
               position: "absolute",
-              left: "clamp(2rem, 4vw, 4.5rem)",
-              top: "50%",
+              left: isMobile ? "clamp(1.5rem, 5vw, 2.5rem)" : "clamp(2rem, 4vw, 4.5rem)",
+              top: isMobile ? "28%" : "50%",
               transform: "translateY(-50%)",
               zIndex: 5, pointerEvents: "none",
               display: "flex", flexDirection: "column",
-              maxWidth: "min(400px, 38vw)",
+              maxWidth: isMobile ? "90vw" : "min(400px, 38vw)",
             }}
           >
             <motion.div style={{ y: tagY, opacity: tagOpacity, marginBottom: "1.5rem" }}>
@@ -764,7 +760,7 @@ export default function ScrollIntro() {
                 active={sc.tag} speed={28} stagger={42}
                 style={{
                   fontFamily: "'DM Mono', monospace", fontWeight: 400,
-                  fontSize: "clamp(0.52rem, 1vw, 0.68rem)",
+                  fontSize: isMobile ? "0.6rem" : "clamp(0.52rem, 1vw, 0.68rem)",
                   letterSpacing: "0.5em", color: "#E8A020",
                   textTransform: "uppercase",
                 }}
@@ -777,7 +773,7 @@ export default function ScrollIntro() {
                 active={sc.title} speed={45} stagger={100}
                 style={{
                   fontFamily: "'Bebas Neue', sans-serif", fontWeight: 900,
-                  fontSize: "clamp(5rem, 14vw, 11rem)",
+                  fontSize: isMobile ? "clamp(4.5rem, 18vw, 6rem)" : "clamp(5rem, 14vw, 11rem)",
                   lineHeight: 0.88, letterSpacing: "0.02em",
                   background: "linear-gradient(155deg,#ffffff 0%,#ffd97a 40%,#E8A020 100%)",
                   WebkitBackgroundClip: "text",
@@ -785,7 +781,7 @@ export default function ScrollIntro() {
                   backgroundClip: "text",
                   filter: "drop-shadow(0 0 24px rgba(232,160,32,0.3))",
                   userSelect: "none",
-                  minHeight: "8rem",
+                  minHeight: isMobile ? "5rem" : "8rem",
                 }}
               />
             </motion.div>
@@ -796,7 +792,7 @@ export default function ScrollIntro() {
                 active={sc.sub} speed={32} stagger={55}
                 style={{
                   fontFamily: "'DM Mono', monospace", fontWeight: 400,
-                  fontSize: "clamp(0.85rem, 2.2vw, 1.4rem)",
+                  fontSize: isMobile ? "1rem" : "clamp(0.85rem, 2.2vw, 1.4rem)",
                   letterSpacing: "0.42em",
                   color: "rgba(240,237,230,0.5)",
                   height: "1.8rem",
@@ -809,7 +805,8 @@ export default function ScrollIntro() {
           <motion.div
             style={{
               position: "absolute",
-              bottom: "3.5rem", left: "clamp(2rem, 4vw, 4.5rem)",
+              bottom: isMobile ? "4.5rem" : "3.5rem", 
+              left: isMobile ? "1.5rem" : "clamp(2rem, 4vw, 4.5rem)",
               opacity: dismantleHeadOp, y: dismantleHeadY,
               zIndex: 6, pointerEvents: "none",
             }}
@@ -841,7 +838,9 @@ export default function ScrollIntro() {
           {/* ── Coordinates ── */}
           <motion.div
             style={{
-              position: "absolute", bottom: "2.5rem", right: "2.5rem",
+              position: "absolute", 
+              bottom: isMobile ? "1.5rem" : "2.5rem", 
+              right: isMobile ? "1.5rem" : "2.5rem",
               opacity: tagOpacity, zIndex: 6, pointerEvents: "none",
               textAlign: "right",
             }}

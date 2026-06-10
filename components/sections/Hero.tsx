@@ -7,7 +7,6 @@
 
 import React, { useRef, useMemo } from "react";
 import { motion, Variants } from "framer-motion";
-import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { RoundedBox, Environment } from "@react-three/drei";
@@ -366,7 +365,7 @@ export default function Hero() {
             </p>
             
             <div className="flex flex-wrap items-center gap-4 flex-shrink-0">
-              <Link href="#pitch">
+              <a href="#pitch">
                 <motion.button
                   whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
                   className="group inline-flex items-center gap-2 px-6 py-3.5 transition-all duration-200"
@@ -375,15 +374,15 @@ export default function Hero() {
                   Pitch Your Idea
                   <ArrowUpRight size={13} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                 </motion.button>
-              </Link>
-              <Link href="#vision">
+              </a>
+              <a href="#vision">
                 <button
                   style={{ fontFamily:"'DM Mono', monospace", fontSize:"0.72rem", letterSpacing:"0.08em", textTransform:"uppercase", border:"1px solid rgba(255,255,255,0.3)", color:"#ffffff", padding:"14px 24px", fontWeight: 600 }}
                   className="hover:bg-white/5 transition-all duration-200"
                 >
                   OUR VISION
                 </button>
-              </Link>
+              </a>
             </div>
           </motion.div>
         </motion.div>
