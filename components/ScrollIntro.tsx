@@ -367,6 +367,7 @@ const Reactor = memo(function Reactor({
   );
 });
 
+// ─── SCROLL NUDGE ─────────────────────────────────────────────────────────────
 function ScrollNudge({ opacity }: { opacity: MotionValue<number> }) {
   return (
     <motion.div
@@ -401,6 +402,106 @@ function ScrollNudge({ opacity }: { opacity: MotionValue<number> }) {
   );
 }
 
+// ─── PROGRESS BAR ─────────────────────────────────────────────────────────────
+function ProgressBar({ progress }: { progress: MotionValue<number> }) {
+  const scaleX = useTransform(progress, [0, 1], [0, 1]);
+  const opacity = useTransform(progress, [0, 0.02, 0.94, 0.99], [0, 1, 1, 0]);
+  const dotLeft = useTransform(progress, (v) => `calc(${v * 100}% - 3px)`);
+
+  return (
+    <motion.div
+      style={{
+        position: "absolute",
+        bottom: 0, left: 0, right: 0,
+        height: "2px",
+        background: "rgba(232,160,32,0.12)",
+        zIndex: 20,
+        opacity,
+        pointerEvents: "none",
+      }}
+    >
+      {/* Filled track */}
+      <motion.div
+        style={{
+          position: "absolute",
+          top: 0, left: 0, bottom: 0, right: 0,
+          background: "linear-gradient(90deg, #7a3e00 0%, #E8A020 60%, #fff8e7 100%)",
+          transformOrigin: "left center",
+          scaleX,
+          willChange: "transform",
+        }}
+      />
+      {/* Leading glow dot */}
+      <motion.div
+        style={{
+          position: "absolute",
+          top: "50%",
+          translateY: "-50%",
+          width: 6, height: 6,
+          borderRadius: "50%",
+          background: "#E8A020",
+          boxShadow: "0 0 8px 3px rgba(232,160,32,0.6)",
+          left: dotLeft,
+          willChange: "left",
+        }}
+      />
+    </motion.div>
+  );
+}
+
+// ─── PERCENT COUNTER ──────────────────────────────────────────────────────────
+function PercentCounter({ progress }: { progress: MotionValue<number> }) {
+  const [pct, setPct] = useState(0);
+  const opacity = useTransform(progress, [0, 0.02, 0.94, 0.99], [0, 1, 1, 0]);
+
+  useMotionValueEvent(progress, "change", (v) => {
+    setPct(Math.round(v * 100));
+  });
+
+  return (
+    <motion.div
+      style={{
+        position: "absolute",
+        bottom: "0.9rem",
+        left: "50%",
+        translateX: "-50%",
+        opacity,
+        zIndex: 20,
+        pointerEvents: "none",
+        display: "flex",
+        alignItems: "baseline",
+        gap: "0.2rem",
+      }}
+    >
+      <span
+        style={{
+          fontFamily: "'DM Mono', monospace",
+          fontSize: "0.72rem",
+          fontWeight: 500,
+          color: "#E8A020",
+          letterSpacing: "0.06em",
+          minWidth: "2rem",
+          textAlign: "right",
+          opacity: 0.85,
+        }}
+      >
+        {pct}
+      </span>
+      <span
+        style={{
+          fontFamily: "'DM Mono', monospace",
+          fontSize: "0.52rem",
+          letterSpacing: "0.28em",
+          color: "rgba(232,160,32,0.45)",
+          textTransform: "uppercase",
+        }}
+      >
+        %
+      </span>
+    </motion.div>
+  );
+}
+
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 export default function ScrollIntro() {
   const containerRef  = useRef<HTMLDivElement>(null);
@@ -428,7 +529,6 @@ export default function ScrollIntro() {
 
   useEffect(() => {
     if (hasPlayedIntro) {
-      // Already played: release DeferredScene immediately (no animation running)
       setIntroActive(false);
     } else {
       setIntroActive(true);
@@ -436,16 +536,11 @@ export default function ScrollIntro() {
   }, [setIntroActive]);
 
   // ─── KEY FIX: only release DeferredScene AFTER isMounted → false ──────────
-  // Previously setIntroActive(false) was called inside finish() while the
-  // flash/fade was still running, causing Three.js shader compile to fire
-  // mid-animation. Now we watch isMounted and only release when the component
-  // is fully gone from the DOM.
   useEffect(() => {
     if (!isMounted && doneRef.current) {
       setIntroActive(false);
     }
   }, [isMounted, setIntroActive]);
-  // ──────────────────────────────────────────────────────────────────────────
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -488,9 +583,6 @@ export default function ScrollIntro() {
     hasPlayedIntro = true;
     setIsFadingOut(true);
     window.scrollTo({ top: 0, behavior: "instant" });
-    // NOTE: setIntroActive(false) is NOT called here anymore.
-    // It is called in the useEffect above that watches isMounted,
-    // so Three.js only mounts after the component is fully unmounted.
     setTimeout(() => setIsMounted(false), 55);
   }, []);
 
@@ -603,8 +695,7 @@ export default function ScrollIntro() {
   );
 
   const tyDesktop = useTransform(progress, [0, 1], ["-50%", "-50%"]);
-
-  const tyMobile = useTransform(progress, [0, 1], ["-50%", "-50%"]);
+  const tyMobile  = useTransform(progress, [0, 1], ["-50%", "-50%"]);
 
   const reactorRotY = useTransform(
     progress,
@@ -871,6 +962,10 @@ export default function ScrollIntro() {
           </motion.div>
 
           <ScrollNudge opacity={nudgeOp} />
+
+          {/* ── Progress loader ── */}
+          <ProgressBar progress={progress} />
+          <PercentCounter progress={progress} />
         </motion.div>
       </div>
     </>
