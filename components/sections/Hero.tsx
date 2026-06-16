@@ -5,7 +5,7 @@
 //
 // Improvements over previous version:
 //   1. Emissive flash — cubies burst amber on shatter, fade out as they fall
-//   2. Web Audio crack/crunch on shatter + soft "whoosh" on rebuild (no assets)
+//   2. Web Audio removed completely
 //   3. Spark trails on rebuild — tiny amber particles follow each cubie home
 //   4. Hint text auto-hides after first shatter, never reappears
 //   5. Double-click / double-tap anywhere on cube also triggers shatter
@@ -19,70 +19,6 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { RoundedBox, Environment } from "@react-three/drei";
 import * as THREE from "three";
 import { siteConfig } from "@/config/site";
-
-// ─── Web Audio — synthesised shatter + rebuild sounds ─────────────────────────
-function playShatterSound() {
-  try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-
-    // Noise burst
-    const bufLen = ctx.sampleRate * 0.18;
-    const buf    = ctx.createBuffer(1, bufLen, ctx.sampleRate);
-    const data   = buf.getChannelData(0);
-    for (let i = 0; i < bufLen; i++)
-      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufLen, 2.5);
-
-    const src  = ctx.createBufferSource();
-    src.buffer = buf;
-
-    // Band-pass to make it crunchy
-    const bp      = ctx.createBiquadFilter();
-    bp.type       = "bandpass";
-    bp.frequency.value  = 1800;
-    bp.Q.value          = 0.6;
-
-    const gain        = ctx.createGain();
-    gain.gain.value   = 0.55;
-
-    src.connect(bp); bp.connect(gain); gain.connect(ctx.destination);
-    src.start();
-
-    // Low thud
-    const osc        = ctx.createOscillator();
-    osc.type         = "sine";
-    osc.frequency.setValueAtTime(120, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.2);
-    const thudGain   = ctx.createGain();
-    thudGain.gain.setValueAtTime(0.4, ctx.currentTime);
-    thudGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
-    osc.connect(thudGain); thudGain.connect(ctx.destination);
-    osc.start(); osc.stop(ctx.currentTime + 0.25);
-
-    setTimeout(() => ctx.close(), 500);
-  } catch (_) {}
-}
-
-function playRebuildSound() {
-  try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-
-    // Rising shimmer
-    const osc        = ctx.createOscillator();
-    osc.type         = "sine";
-    osc.frequency.setValueAtTime(300, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + REBUILD_DUR);
-
-    const gain       = ctx.createGain();
-    gain.gain.setValueAtTime(0.0, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + 0.3);
-    gain.gain.linearRampToValueAtTime(0.0,  ctx.currentTime + REBUILD_DUR);
-
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.start(); osc.stop(ctx.currentTime + REBUILD_DUR + 0.1);
-
-    setTimeout(() => ctx.close(), (REBUILD_DUR + 0.5) * 1000);
-  } catch (_) {}
-}
 
 // ─── Procedural Textures ──────────────────────────────────────────────────────
 const createTextures = () => {
@@ -361,7 +297,6 @@ function RubikGroup({ materials, onShatter, onRebuildStart }: {
     stateRef.current     = "SHATTERING";
     shatterTimer.current = 0;
     onShatter();
-    playShatterSound();
 
     // Switch to emissive clones for the flash
     applyEmissiveMats(true);
@@ -411,7 +346,7 @@ function RubikGroup({ materials, onShatter, onRebuildStart }: {
     stateRef.current     = "REBUILDING";
     rebuildTimer.current = 0;
     onRebuildStart();
-    playRebuildSound();
+    
     cubieRefs.current.forEach(m => {
       if (!m) return;
       const phys        = m.userData as CubiePhysics;
