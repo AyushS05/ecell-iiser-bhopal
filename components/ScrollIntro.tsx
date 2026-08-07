@@ -595,7 +595,7 @@ export default function ScrollIntro() {
     requestAnimationFrame(() => { syncingScrollRef.current = false; });
     autoProg.set(from);
     autoCtrlRef.current = animate(autoProg, 1, {
-      duration: 10.5 * remaining,
+      duration: 6.5 * remaining, // Modified from 10.5
       ease: "linear",
       onComplete: finish,
     });
@@ -607,7 +607,7 @@ export default function ScrollIntro() {
     window.scrollTo({ top: 0, behavior: "instant" });
     autoProg.set(0);
     autoCtrlRef.current = animate(autoProg, 1, {
-      duration: 10.5,
+      duration: 6.5, // Modified from 10.5
       ease: "linear",
       onComplete: finish,
     });
@@ -615,7 +615,7 @@ export default function ScrollIntro() {
 
   useEffect(() => {
     if (!isMounted || doneRef.current) return;
-    const t = setTimeout(() => startAuto(), 600);
+    const t = setTimeout(() => startAuto(), 300); // Modified from 600
     return () => clearTimeout(t);
   }, [startAuto, isMounted]);
 
@@ -665,7 +665,7 @@ export default function ScrollIntro() {
       if (!doneRef.current && !autoCtrlRef.current) {
         resumeAuto(progress.get());
       }
-    }, 1200);
+    }, 800); // Modified from 1200
   });
 
   // ─── RESPONSIVE TRANSFORMS ────────────────────────────────────────────────
